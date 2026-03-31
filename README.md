@@ -1,2 +1,2 @@
-# auth-service
-This repository contains the authentication service developped using the framework Django
+# frontend
+This repository contains the frontend of the project
