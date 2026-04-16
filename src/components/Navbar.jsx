@@ -1,77 +1,98 @@
 import React, { useState } from 'react';
-import { Icon,CircleUserRound, Heart, House, HouseHeart, X, Menu, Search } from "lucide-react";
-import {Link , useLocation} from "react-router-dom";
+
 const Navbar = () => {
-    const location = useLocation();
-    const pathname = location.pathname;
-    const [menuOpen, setMenuOpen] = useState(false)
-     const navLinks =[
-        {href: "/", label:"Home" , icon: HouseHeart},
-        {href:"/favorite", label:"Favorite", icon: Heart},
-        {href:"/decouverte" , label:"Discovery" , icon: Search},
-        {href:"/profile", label:"Profil", icon:CircleUserRound}
+  const [isOpen, setIsOpen] = useState(false);
 
-     ]
-
-      const renderLinks = (baseClass) => (
-        <>
-            {navLinks.map(({ href, label, icon: Icon }) => {
-                const isActive = pathname === href
-                const activeClass = isActive ? 'btn-primary' : 'btn-ghost'
-                return (
-                    <Link
-                        to={href}
-                        key={href}
-                        onClick={() => setMenuOpen(false)}
-                        className={`${baseClass} ${activeClass} btn-sm flex gap-2 items-center`}
-                    >
-                        <Icon className='w-4 h-4' />
-                        {label}
-                    </Link>
-                )
-
-            })}
-        </>
-        )
-    return(
-        <div className='border-b border-base-300 px-5 md:px-[10%] py-4 relative'>
-            <div className='flex justify-between items-center'>
-                <div className='flex items-center p-2 '>
-                        <House className='w-6 h-6 text-primary' />
-                        <span className='font-bold  text-xl ml-2'>
-                            DreamHouse
-                         </span>
-                    
-                    </div>
-
-                    <button
-                        className='btn w-fit sm:hidden btn-sm'
-                        onClick={() => setMenuOpen(!menuOpen)}
-                     >
-                    <Menu className='w-4 h-4' />
-                </button>
-
-                <div className='hidden space-x-2 sm:flex items-center'>
-                    {renderLinks("btn")}
-                    
-                </div>
-            </div>
-
-            <div className={`absolute top-0 w-full bg-base-100 h-screen flex flex-col gap-2 p-4 
-                transition-all duration-300 sm:hidden z-50 ${menuOpen ? "left-0" : "-left-full"} `}>
-                <div className='flex justify-between'>
-                   
-                    <button
-                        className='btn w-fit sm:hidden btn-sm'
-                        onClick={() => setMenuOpen(!menuOpen)}
-                    >
-                        <X className='w-4 h-4' />
-                    </button>
-                </div>
-                {renderLinks("btn")}
-            </div>
-
+  return (
+    <nav className="bg-white shadow-sm font-sans relative">
+      <div className="flex items-center justify-between px-6 py-3">
+        <div className="flex items-center space-x-2 cursor-pointer">
+          <div className="w-8 h-8 bg-[#007b83] rounded-full flex items-center justify-center text-white text-xs font-bold">
+            D
+          </div>
+          <div className="text-xl font-bold tracking-tight">
+            <span className="text-[#007b83]">Dream</span>
+            <span className="text-[#ff8800] ml-1">House</span>
+          </div>
         </div>
-    )
-}
+
+        <div className="hidden md:flex items-center space-x-6 text-sm font-medium text-gray-700">
+          <a href="/" className="hover:text-[#007b83] transition-colors">
+            Bien en location <span className="text-gray-300 mx-1">|</span> Vendre
+          </a>
+          <a href="/conseil" className="hover:text-[#007b83] transition-colors">Actus & Conseils</a>
+          <a href="/recherche" className="hover:text-[#007b83] transition-colors">Recherche</a>
+          <a href="/contact" className="hover:text-[#007b83] transition-colors">Contact</a>
+          
+        </div>
+
+  
+        <div className="flex items-center space-x-4">
+          
+          <div className="hidden sm:flex items-center text-sm font-medium text-gray-600">
+            <button className="font-bold text-gray-900 px-1">FR</button>
+            <span className="text-gray-300">/</span>
+            <button className="px-1 hover:text-[#007b83]">EN</button>
+          </div>
+
+          <div className="hidden md:flex items-center space-x-3">
+            <a href="/connexion">
+               <button className="px-5 py-2 text-sm font-semibold text-[#007b83] border border-[#007b83] rounded-md hover:bg-[#f0f9fa]">
+              Se connecter
+            </button>
+            </a>
+           
+           <a href="/inscription">
+            <button className="px-5 py-2 text-sm font-semibold text-white bg-[#007b83] rounded-md hover:bg-[#00666d]">
+              S'inscrire
+            </button>
+           </a>
+            
+          </div>
+
+          <div className="md:hidden flex items-center">
+            <button 
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-gray-700 focus:outline-none p-2"
+            >
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+  
+      {isOpen && (
+        <div className="md:hidden bg-white border-t border-gray-100 px-6 py-4 space-y-4 shadow-lg absolute w-full left-0 z-50">
+          <a href="/" className="block text-gray-700 font-medium">Bien en location / Vendre</a>
+          <a href="/conseil" className="block text-gray-700 font-medium">Actus & Conseils</a>
+          <a href="/recherche" className="hover:text-[#007b83] transition-colors">Recherche</a>
+          <a href="/contact" className="block text-gray-700 font-medium">Contact</a>
+          <hr className="border-gray-100" />
+          
+          <div className="flex flex-col space-y-3">
+            <a href="/connexion">
+              <button className="w-full py-2 text-center font-semibold text-[#007b83] border border-[#007b83] rounded-md">
+              Se connecter
+            </button>
+            </a>
+            <a href="/inscription">
+              <button className="w-full py-2 text-center font-semibold text-white bg-[#007b83] rounded-md">
+              S'inscrire
+            </button>
+            </a>
+            
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+};
+
 export default Navbar;
