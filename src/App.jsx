@@ -13,6 +13,7 @@ import Publication from './pages/Publication'
 import ProfilePage from './Profil'
 import MyPublications  from './pages/MesPublications'
 import ModifierPublication from './pages/ModificationImo'
+import Details from './pages/detail'
 import './App.css'
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
            <Route path='/profile' element={< ProfilePage /> }/>
            <Route path='/mes-publications' element={<MyPublications/>}/>
            <Route path='/Modif'element={<ModifierPublication/>} />
+           < Route path='/detail' element={ <Details />}/>
         
         </Routes>
         <Footer/>
