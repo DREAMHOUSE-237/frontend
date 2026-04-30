@@ -5,3 +5,20 @@
 body {
     font-family: "poppins";
 }
+
+@theme {
+  /* Définition des animations pour Tailwind v4 */
+  --animate-blink: blink 0.8s infinite;
+  --animate-slow-zoom: slow-zoom 20s linear infinite alternate;
+
+  /* Définition des keyframes */
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @keyframes slow-zoom {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
+  }
+}
