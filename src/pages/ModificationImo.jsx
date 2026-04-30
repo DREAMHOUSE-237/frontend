@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ChevronLeft, MapPin, Layout, Sparkles, Type, 
-  AlignLeft, DollarSign, Clock, Home, X, 
+import {
+  ChevronLeft, MapPin, Layout, Sparkles, Type,
+  AlignLeft, DollarSign, Clock, Home, X,
   Camera, Plus, Navigation, Check, Save
 } from 'lucide-react';
 
@@ -46,20 +46,23 @@ const ModifierPublication = ({ publicationInitiale, onBack }) => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col w-full font-sans text-gray-900">
-      
+
       {/* HEADER FIXE */}
       <div className="bg-white border-b sticky top-0 z-20 w-full py-4 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
-              onClick={onBack}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600"
-            >
-              <ChevronLeft size={24} />
-            </button>
+            <a href="/mes-publications">
+              <button
+                onClick={onBack}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600"
+              >
+                <ChevronLeft size={24} />
+              </button>
+            </a>
+
             <h1 className="text-xl font-bold text-gray-800">Modifier l'annonce</h1>
           </div>
-          <button 
+          <button
             onClick={handleUpdate}
             className="bg-[#007b83] text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-[#00666d] transition-all shadow-md active:scale-95"
           >
@@ -69,39 +72,39 @@ const ModifierPublication = ({ publicationInitiale, onBack }) => {
       </div>
 
       <div className="flex-1 w-full p-6 max-w-5xl mx-auto space-y-10">
-        
+
         {/* SECTION 1 : INFORMATIONS GÉNÉRALES */}
         <section className="space-y-6">
           <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
             <Layout className="text-[#007b83]" size={20} />
             <h2 className="font-bold uppercase text-xs tracking-widest text-gray-500">Description principale</h2>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-semibold flex items-center gap-2"><Type size={16} /> Titre</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={formData.titre}
-                onChange={(e) => setFormData({...formData, titre: e.target.value})}
-                className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#007b83] transition-colors" 
+                onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
+                className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#007b83] transition-colors"
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold flex items-center gap-2"><DollarSign size={16} /> Prix (FCFA)</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 value={formData.prix}
-                onChange={(e) => setFormData({...formData, prix: e.target.value})}
-                className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#007b83]" 
+                onChange={(e) => setFormData({ ...formData, prix: e.target.value })}
+                className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#007b83]"
               />
             </div>
             <div className="space-y-2 md:col-span-2">
               <label className="text-sm font-semibold flex items-center gap-2"><AlignLeft size={16} /> Description détaillée</label>
-              <textarea 
-                rows="4" 
+              <textarea
+                rows="4"
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#007b83] resize-none"
               ></textarea>
             </div>
@@ -121,7 +124,7 @@ const ModifierPublication = ({ publicationInitiale, onBack }) => {
               {formData.images.map((img, i) => (
                 <div key={i} className="aspect-square rounded-lg overflow-hidden border border-gray-100 relative group">
                   <img src={img.preview || img} className="w-full h-full object-cover" alt="" />
-                  <button 
+                  <button
                     onClick={() => removeImage(i)}
                     className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                   >
@@ -139,9 +142,9 @@ const ModifierPublication = ({ publicationInitiale, onBack }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-semibold">Type de Publication</label>
-              <select 
+              <select
                 value={formData.typePublication}
-                onChange={(e) => setFormData({...formData, typePublication: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, typePublication: e.target.value })}
                 className="w-full p-4 bg-white border border-gray-200 rounded-xl outline-none focus:border-[#007b83]"
               >
                 <option value="louer">À Louer</option>
@@ -151,9 +154,9 @@ const ModifierPublication = ({ publicationInitiale, onBack }) => {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold">Catégorie</label>
-              <select 
+              <select
                 value={formData.categorie}
-                onChange={(e) => setFormData({...formData, categorie: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, categorie: e.target.value })}
                 className="w-full p-4 bg-white border border-gray-200 rounded-xl outline-none focus:border-[#007b83]"
               >
                 <option value="chambre">Chambre</option>
@@ -175,20 +178,20 @@ const ModifierPublication = ({ publicationInitiale, onBack }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-semibold flex items-center gap-2"><Navigation size={16} /> Ville</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={formData.ville}
-                onChange={(e) => setFormData({...formData, ville: e.target.value})}
-                className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#007b83]" 
+                onChange={(e) => setFormData({ ...formData, ville: e.target.value })}
+                className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#007b83]"
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold flex items-center gap-2"><MapPin size={16} /> Quartier</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={formData.quartier}
-                onChange={(e) => setFormData({...formData, quartier: e.target.value})}
-                className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#007b83]" 
+                onChange={(e) => setFormData({ ...formData, quartier: e.target.value })}
+                className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#007b83]"
               />
             </div>
           </div>

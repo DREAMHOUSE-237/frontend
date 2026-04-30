@@ -10,7 +10,7 @@ import Contact from './pages/Contact'
 import Inscription from './pages/Inscription'
 import Connexion from './pages/Connexion'
 import Publication from './pages/Publication'
-import ProfilePage from './Profil'
+import ProfilePage from './pages/Profil'
 import MyPublications  from './pages/MesPublications'
 import ModifierPublication from './pages/ModificationImo'
 import Details from './pages/detail'
@@ -26,7 +26,7 @@ function App() {
            <Route path='/' element={<Accueil />} />
            <Route path='/equipe' element={< Equipe/>}/>
            <Route path='/conseil' element={<ActusConseils/>}/>
-           <Route path='/recherche' element={<Recherche/>}/>
+           <Route path='/catalogue' element={<Recherche/>}/>
            <Route path='/contact' element={<Contact />} />
            <Route path='/inscription' element={<Inscription/>} />
            <Route path='/connexion' element={<Connexion/>}/>

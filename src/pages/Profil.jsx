@@ -151,23 +151,7 @@ const ProfilePage = () => {
 
                     </div>
 
-                    {/* Bouton Enregistrer */}
-                    <div className="pt-6">
-                        <button
-                            onClick={handleSave}
-                            disabled={isSaving}
-                            className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2 ${isSaving ? 'bg-gray-400' : 'bg-[#007b83] hover:bg-[#00666d] active:scale-[0.98]'
-                                }`}
-                        >
-                            {isSaving ? (
-                                "Enregistrement..."
-                            ) : (
-                                <>
-                                    <Check size={20} /> ENREGISTRER LES MODIFICATIONS
-                                </>
-                            )}
-                        </button>
-                    </div>
+                    
                 </div>
 
             </div>
