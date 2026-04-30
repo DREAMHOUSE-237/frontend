@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  Home, Key, Tag, ShieldCheck, Handshake, 
+import {
+  Home, Key, Tag, ShieldCheck, Handshake,
   Calculator, Search, Coins, MessageCircle,
   BedDouble, Bath, Calendar, Car,
-  ChevronLeft, ChevronRight 
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import acc1 from '../assets/acc1.png';
@@ -44,8 +44,59 @@ const Accueil = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Bannière */}
-      <div className='relative h-[300px] md:h-[450px] w-full overflow-hidden'>
-        <img src={acc1} alt="Bannière" className="w-full h-full object-cover" />
+      {/* Bannière d'accueil optimisée */}
+      <div className='relative h-[500px] md:h-[650px] w-full overflow-hidden'>
+        {/* Image avec zoom lent au chargement pour un effet premium */}
+        <img
+          src={acc1}
+          alt="Bannière"
+          className="w-full h-full object-cover animate-slow-zoom"
+        />
+
+        {/* Overlay avec gradient : plus sombre en bas pour faire ressortir le texte */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+
+        {/* Contenu textuel centré avec animation */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+          <div className="max-w-4xl space-y-6">
+
+            {/* Petit badge de bienvenue */}
+            <span className="inline-block px-4 py-1.5 mb-2 rounded-full bg-[#007b83]/30 text-[#007b83] border border-[#007b83]/50 backdrop-blur-md text-sm font-semibold tracking-widest uppercase animate-fade-in-down">
+              Bienvenue chez Dreamhouse
+            </span>
+
+            <h1 className="text-4xl md:text-7xl font-extrabold text-white leading-tight drop-shadow-lg">
+              L'immobilier qui vous <br />
+              <span className="text-[#007b83]">ressemble enfin.</span>
+            </h1>
+
+            <p className="text-gray-200 text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed">
+              Découvrez une sélection exclusive de biens d'exception au cœur du Cameroun,
+              alliant confort moderne et sérénité.
+            </p>
+
+            {/* Boutons d'action épurés */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
+              <button
+                onClick={() => window.scrollTo({ top: 600, behavior: 'smooth' })}
+                className="px-8 py-4 bg-[#007b83] text-white rounded-xl font-bold text-lg hover:bg-[#00666d] hover:scale-105 transition-all duration-300 shadow-lg shadow-[#007b83]/30"
+              >
+                Explorer les biens
+              </button>
+
+              <button className="px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/30 rounded-xl font-bold text-lg hover:bg-white hover:text-[#007b83] transition-all duration-300">
+                Nos Services
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Indicateur de scroll minimaliste en bas */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce hidden md:block">
+          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
+            <div className="w-1 h-2 bg-white rounded-full mt-2"></div>
+          </div>
+        </div>
       </div>
 
       {/* Section des Annonces */}
@@ -59,9 +110,9 @@ const Accueil = () => {
         {/* Grille d'affichage des 6 annonces actuelles */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {currentAnnonces.map((annonce) => (
-            <div 
-              key={annonce.id} 
-              onClick={() => navigate(`/details/${annonce.id}`)} 
+            <div
+              key={annonce.id}
+              onClick={() => navigate(`/details/${annonce.id}`)}
               className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group flex flex-col h-full border border-gray-100 overflow-hidden"
             >
               <div className="relative h-64 overflow-hidden">
@@ -98,7 +149,7 @@ const Accueil = () => {
         {/* 4. Barre de Pagination (S'affiche seulement si > 6 annonces) */}
         {annonces.length > annoncesPerPage && (
           <div className="mt-12 flex justify-center items-center gap-2">
-            <button 
+            <button
               onClick={() => currentPage > 1 && paginate(currentPage - 1)}
               disabled={currentPage === 1}
               className={`p-2 rounded-lg border transition-all ${currentPage === 1 ? 'text-gray-300 border-gray-100' : 'text-[#007b83] border-[#007b83] hover:bg-[#007b83] hover:text-white'}`}
@@ -116,7 +167,7 @@ const Accueil = () => {
               </button>
             ))}
 
-            <button 
+            <button
               onClick={() => currentPage < totalPages && paginate(currentPage + 1)}
               disabled={currentPage === totalPages}
               className={`p-2 rounded-lg border transition-all ${currentPage === totalPages ? 'text-gray-300 border-gray-100' : 'text-[#007b83] border-[#007b83] hover:bg-[#007b83] hover:text-white'}`}
@@ -128,7 +179,7 @@ const Accueil = () => {
       </section>
 
       {/* Section Services */}
-     <section className="bg-[#007b83] py-16 px-4 md:px-6">
+      <section className="bg-[#007b83] py-16 px-4 md:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-white inline-block border-b-4 border-white pb-2 uppercase tracking-wide">
@@ -138,10 +189,10 @@ const Accueil = () => {
           <div className="flex md:grid md:grid-cols-2 gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-hide pb-6">
             <div className="min-w-[85vw] md:min-w-0 snap-center bg-white rounded-xl overflow-hidden shadow-2xl flex flex-col">
               <div className="p-4 bg-gray-50 text-center border-b italic text-[#007b83] font-semibold">Gestion immobilière</div>
-              <img 
-                src={acc2} 
-                className="w-full h-48 object-cover" 
-                alt="Gestion Immobilière" 
+              <img
+                src={acc2}
+                className="w-full h-48 object-cover"
+                alt="Gestion Immobilière"
               />
               <div className="p-6 space-y-6 flex-grow">
                 <div className="flex items-center space-x-5">
@@ -163,17 +214,17 @@ const Accueil = () => {
                   </div>
                 </div>
                 <button className="w-full py-3 bg-[#007b83] text-white rounded-lg font-bold flex items-center justify-center space-x-2 hover:bg-[#00666d]">
-                  <MessageCircle className="w-5 h-5" /> 
+                  <MessageCircle className="w-5 h-5" />
                   <span>Contactez nous</span>
                 </button>
               </div>
             </div>
             <div className="min-w-[85vw] md:min-w-0 snap-center bg-white rounded-xl overflow-hidden shadow-2xl flex flex-col">
               <div className="p-4 bg-gray-50 text-center border-b italic text-[#007b83] font-semibold">Accompagnement et conseil</div>
-              <img 
+              <img
                 src={acc3}
-                className="w-full h-48 object-cover" 
-                alt="Accompagnement et Conseil" 
+                className="w-full h-48 object-cover"
+                alt="Accompagnement et Conseil"
               />
               <div className="p-6 space-y-6 flex-grow">
                 <div className="flex items-center space-x-5">
@@ -195,7 +246,7 @@ const Accueil = () => {
                   </div>
                 </div>
                 <button className="w-full py-3 bg-[#007b83] text-white rounded-lg font-bold flex items-center justify-center space-x-2 hover:bg-[#00666d]">
-                  <MessageCircle className="w-5 h-5" /> 
+                  <MessageCircle className="w-5 h-5" />
                   <span>Contactez nous</span>
                 </button>
               </div>
