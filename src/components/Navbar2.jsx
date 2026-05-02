@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom'; 
 import {
-  Bell, HelpCircle, ChevronDown, User, Building2,
-  FileText, MessageSquare, Reply, History, LogOut, Menu, X
+   ChevronDown, User, Building2,
+   LogOut, Menu, X
 } from 'lucide-react';
 
 const Navbar = () => {

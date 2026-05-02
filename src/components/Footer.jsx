@@ -1,134 +1,105 @@
 import React from 'react';
-import { Facebook, Instagram, Linkedin, MessageCircle, Mail, MapPin, Phone } from 'lucide-react';
-import {Link} from 'react-router-dom';
+import { Facebook, Instagram, Linkedin, MessageCircle, Mail, Phone } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-[#021d33] text-white pt-12 pb-6 px-6 mt-20">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+    <footer className="bg-[#021d33] text-white pt-16 pb-8 px-6 mt-20">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
 
-
-        <div className="col-span-1 md:col-span-1">
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="w-8 h-8 bg-[#007b83] rounded-full flex items-center justify-center text-white text-xs font-bold">
+        {/* Colonne 1 : À propos */}
+        <div className="space-y-6">
+          <div className="flex items-center space-x-2">
+            <div className="w-10 h-10 bg-[#007b83] rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-[#007b83]/20">
               D
             </div>
-            <h2 className="text-xl font-bold uppercase tracking-wider">
+            <h2 className="text-2xl font-bold uppercase tracking-wider">
               <span className="text-white">Dream</span>
               <span className="text-[#ff8800] ml-1">House</span>
             </h2>
           </div>
-          <p className="text-gray-400 text-sm leading-relaxed">
-            DreamHouse est une plateforme innovante dédiée à simplifier l'accès au logement.
+          <p className="text-gray-400 text-sm leading-relaxed max-w-sm">
+            DreamHouse est une plateforme innovante dédiée à simplifier l'accès au logement au Cameroun.
             Nous facilitons les transactions entre locataires, acheteurs et propriétaires
-            avec une transparence totale et un accompagnement sur mesure.
+            avec une transparence totale.
           </p>
         </div>
 
-
-        {/* Colonne 2 : Nos Villes (10 régions, 2 colonnes de 5) */}
-        <div>
-          <h3 className="text-[#ff8800] font-bold mb-6 uppercase text-sm tracking-widest">Nos villes</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <ul className="text-gray-400 text-sm space-y-3">
-              <li className="hover:text-white cursor-pointer transition-colors">Yaoundé</li>
-              <li className="hover:text-white cursor-pointer transition-colors">Douala</li>
-              <li className="hover:text-white cursor-pointer transition-colors">Bafoussam</li>
-              <li className="hover:text-white cursor-pointer transition-colors">Garoua</li>
-              <li className="hover:text-white cursor-pointer transition-colors">Bamenda</li>
-            </ul>
-            <ul className="text-gray-400 text-sm space-y-3">
-              <li className="hover:text-white cursor-pointer transition-colors">Ngaoundéré</li>
-              <li className="hover:text-white cursor-pointer transition-colors">Maroua</li>
-              <li className="hover:text-white cursor-pointer transition-colors">Buea</li>
-              <li className="hover:text-white cursor-pointer transition-colors">Bertoua</li>
-              <li className="hover:text-white cursor-pointer transition-colors">Ebolowa</li>
-            </ul>
-          </div>
-        </div>
-
-
-        
-
-        <div>
+        {/* Colonne 2 : Liens Rapides */}
+        <div className="md:justify-self-center">
           <h3 className="text-[#ff8800] font-bold mb-6 uppercase text-sm tracking-widest">
-            DreamHouse
+            Navigation
           </h3>
-          <ul className="text-gray-400 text-sm space-y-3 flex flex-col">
+          <ul className="text-gray-400 text-sm space-y-4">
             <li>
-              <Link
-                to="/equipe"
-                className="hover:text-white transition-colors duration-200 block"
-              >
+              <Link to="/equipe" className="hover:text-white transition-all duration-200 hover:translate-x-1 inline-block">
                 Qui sommes-nous ?
               </Link>
             </li>
             <li>
-              <Link
-                to="/recherche"
-                className="hover:text-white transition-colors duration-200 block"
-              >
-                Recherche
+              <Link to="/catalogue" className="hover:text-white transition-all duration-200 hover:translate-x-1 inline-block">
+                Catalogue
               </Link>
             </li>
             <li>
-              <Link
-                to="/contact"
-                className="hover:text-white transition-colors duration-200 block"
-              >
+              <Link to="/contact" className="hover:text-white transition-all duration-200 hover:translate-x-1 inline-block">
                 Nous contacter
               </Link>
             </li>
-            <li>
-              <Link
-                to="/conseil"
-                className="hover:text-white transition-colors duration-200 block"
-              >
-                Actus & Conseils
-              </Link>
-            </li>
+            
           </ul>
         </div>
 
-        <div>
-          <h3 className="text-[#ff8800] font-bold mb-6 uppercase text-sm tracking-widest">Retrouvez-nous sur</h3>
-          <div className="space-y-4">
-            <a href="#" className="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors">
-              <Facebook size={18} />
-              <span className="text-sm">Facebook</span>
+        {/* Colonne 3 : Réseaux Sociaux */}
+        <div className="md:justify-self-end">
+          <h3 className="text-[#ff8800] font-bold mb-6 uppercase text-sm tracking-widest text-left">
+            Retrouvez-nous
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <a href="#" className="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors group">
+              <div className="p-2 bg-white/5 rounded-lg group-hover:bg-[#ff8800]/20 transition-colors">
+                <Facebook size={18} />
+              </div>
+              <span className="text-sm font-medium">Facebook</span>
             </a>
-            <a href="#" className="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors">
-              <Instagram size={18} />
-              <span className="text-sm">Instagram</span>
+            <a href="#" className="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors group">
+              <div className="p-2 bg-white/5 rounded-lg group-hover:bg-[#ff8800]/20 transition-colors">
+                <Instagram size={18} />
+              </div>
+              <span className="text-sm font-medium">Instagram</span>
             </a>
-            <a href="#" className="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors">
-              <Linkedin size={18} />
-              <span className="text-sm">LinkedIn</span>
+            <a href="#" className="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors group">
+              <div className="p-2 bg-white/5 rounded-lg group-hover:bg-[#ff8800]/20 transition-colors">
+                <Linkedin size={18} />
+              </div>
+              <span className="text-sm font-medium">LinkedIn</span>
             </a>
-            <a href="#" className="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors">
-              <MessageCircle size={18} />
-              <span className="text-sm">WhatsApp</span>
+            <a href="#" className="flex items-center space-x-3 text-gray-400 hover:text-white transition-colors group">
+              <div className="p-2 bg-white/5 rounded-lg group-hover:bg-[#25D366]/20 transition-colors">
+                <MessageCircle size={18} />
+              </div>
+              <span className="text-sm font-medium">WhatsApp</span>
             </a>
           </div>
         </div>
       </div>
 
-
-      <div className="max-w-7xl mx-auto border-t border-gray-800 mt-12 pt-6 flex flex-col md:flex-row justify-between items-center">
-        <p className="text-gray-500 text-xs text-center md:text-left">
-          © {currentYear} DreamHouse. Tous droits réservés.
+      {/* Barre de copyright basse */}
+      <div className="max-w-7xl mx-auto border-t border-white/10 mt-16 pt-8 flex flex-col md:row justify-between items-center gap-6">
+        <p className="text-gray-500 text-xs font-medium tracking-wide">
+          © {currentYear} <span className="text-gray-400">DREAMHOUSE</span>. TOUS DROITS RÉSERVÉS.
         </p>
 
-
-        <div className="flex space-x-6 mt-4 md:mt-0 text-gray-500">
-          <div className="flex items-center space-x-1">
-            <Mail size={14} />
-            <span className="text-[10px]">contact@dreamhouse.com</span>
+        <div className="flex space-x-8 text-gray-500">
+          <div className="flex items-center space-x-2 group cursor-pointer">
+            <Mail size={16} className="text-[#ff8800]" />
+            <span className="text-[11px] group-hover:text-white transition-colors">contact@dreamhouse.com</span>
           </div>
-          <div className="flex items-center space-x-1">
-            <Phone size={14} />
-            <span className="text-[10px]">+237 6XX XXX XXX</span>
+          <div className="flex items-center space-x-2 group cursor-pointer">
+            <Phone size={16} className="text-[#007b83]" />
+            <span className="text-[11px] group-hover:text-white transition-colors">+237 6XX XXX XXX</span>
           </div>
         </div>
       </div>

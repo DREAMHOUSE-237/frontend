@@ -9,10 +9,11 @@ import Recherche from './pages/Recherche'
 import Contact from './pages/Contact'
 import Inscription from './pages/Inscription'
 import Connexion from './pages/Connexion'
-import Publication from './pages/Publication'
-import ProfilePage from './pages/Profil'
-import MyPublications  from './pages/MesPublications'
-import ModifierPublication from './pages/ModificationImo'
+import ScrollToTop from "./components/ScrollToTop";
+import Publication from './Proprietaire/Publication'
+import ProfilePage from './Proprietaire/Profil'
+import MyPublications  from './Proprietaire/MesPublications'
+import ModifierPublication from './Proprietaire/ModificationImo'
 import LoginForm from './pages/Connexion2'
 import Details from './pages/detail'
 import './App.css'
@@ -37,6 +38,7 @@ const LayoutWrapper = ({ children }) => {
 function App() {
   return (
     <BrowserRouter>
+    <ScrollToTop />
       <LayoutWrapper>
         <Routes>
            <Route path='/' element={<Accueil />} />

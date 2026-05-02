@@ -1,17 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom'; 
-import { User } from 'lucide-react'; // Importation de l'icône User de la librairie lucide-react
+import { User } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Détecter le scroll pour ajouter un effet d'ombre ou de transparence
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const linkStyles = ({ isActive }) => 
     isActive 
       ? "text-[#007b83] font-bold transition-colors" 
-      : "text-gray-700 hover:text-[#007b83] transition-colors"; 
+      : "text-gray-700 hover:text-[#007b83] transition-colors";
 
   return (
-    <nav className="bg-white shadow-sm font-sans relative">
+    <nav className={`sticky top-0 z-50 bg-white transition-all duration-300 font-sans ${scrolled ? 'shadow-md py-1' : 'shadow-sm py-3'}`}>
       <div className="flex items-center justify-between px-6 py-3">
         
         {/* Logo - Ajusté pour être à gauche sans marge excessive */}
@@ -75,17 +85,13 @@ const Navbar = () => {
         <div className="md:hidden bg-white border-t border-gray-100 px-6 py-4 space-y-4 shadow-lg absolute w-full left-0 z-50 animate-in slide-in-from-top-2">
           {/* Liens de navigation mobiles */}
           <NavLink to="/" className={({ isActive }) => `block font-medium ${isActive ? 'text-[#007b83]' : 'text-gray-700'}`} onClick={() => setIsOpen(false)}>
-            Bien en location / Vendre
+            Accueil
           </NavLink>
-          <NavLink to="/conseil" className={({ isActive }) => `block font-medium ${isActive ? 'text-[#007b83]' : 'text-gray-700'}`} onClick={() => setIsOpen(false)}>
-            Actus & Conseils
-          </NavLink>
+          
           <NavLink to="/catalogue" className={({ isActive }) => `block font-medium ${isActive ? 'text-[#007b83]' : 'text-gray-700'}`} onClick={() => setIsOpen(false)}>
             Catalogue
           </NavLink>
-          <NavLink to="/contact" className={({ isActive }) => `block font-medium ${isActive ? 'text-[#007b83]' : 'text-gray-700'}`} onClick={() => setIsOpen(false)}>
-            Contact
-          </NavLink>
+         
           
           <hr className="border-gray-100" />
           
