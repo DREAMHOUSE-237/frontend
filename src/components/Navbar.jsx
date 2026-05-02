@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom'; 
+import { User } from 'lucide-react'; // Importation de l'icône User de la librairie lucide-react
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -11,9 +13,10 @@ const Navbar = () => {
   return (
     <nav className="bg-white shadow-sm font-sans relative">
       <div className="flex items-center justify-between px-6 py-3">
-        {/* Logo */}
+        
+        {/* Logo - Ajusté pour être à gauche sans marge excessive */}
         <NavLink to="/" className="flex items-center space-x-2 cursor-pointer">
-          <div className="w-8 h-8 bg-[#007b83] rounded-full flex items-center justify-center text-white text-xs font-bold ml-10">
+          <div className="w-8 h-8 bg-[#007b83] rounded-full flex items-center justify-center text-white text-xs font-bold">
             D
           </div>
           <div className="text-xl font-bold tracking-tight">
@@ -30,6 +33,7 @@ const Navbar = () => {
           <NavLink to="/catalogue" className={linkStyles}>Catalogue</NavLink>
         </div>
 
+        {/* Côté Droit : Sélecteur de langue et Bouton Connexion Unique */}
         <div className="flex items-center space-x-4">
           <div className="hidden sm:flex items-center text-sm font-medium text-gray-600">
             <button className="font-bold text-gray-900 px-1">FR</button>
@@ -37,15 +41,13 @@ const Navbar = () => {
             <button className="px-1 hover:text-[#007b83]">EN</button>
           </div>
 
-          <div className="hidden md:flex items-center space-x-3">
+          {/* Zone de connexion Desktop épurée */}
+          <div className="hidden md:flex items-center">
             <NavLink to="/connexion">
-              <button className="px-5 py-2 text-sm font-semibold text-[#007b83] border border-[#007b83] rounded-md hover:bg-[#f0f9fa]">
+              {/* Bouton mis à jour : conserve ton style mais ajoute l'icône */}
+              <button className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-[#007b83] border border-[#007b83] rounded-md hover:bg-[#f0f9fa]">
+                <User size={16} /> {/* L'icône bonhomme */}
                 Se connecter
-              </button>
-            </NavLink>
-            <NavLink to="/inscription">
-              <button className="px-5 py-2 text-sm font-semibold text-white bg-[#007b83] rounded-md hover:bg-[#00666d]">
-                S'inscrire
               </button>
             </NavLink>
           </div>
@@ -70,15 +72,16 @@ const Navbar = () => {
 
       {/* Menu Mobile */}
       {isOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 px-6 py-4 space-y-4 shadow-lg absolute w-full left-0 z-50">
+        <div className="md:hidden bg-white border-t border-gray-100 px-6 py-4 space-y-4 shadow-lg absolute w-full left-0 z-50 animate-in slide-in-from-top-2">
+          {/* Liens de navigation mobiles */}
           <NavLink to="/" className={({ isActive }) => `block font-medium ${isActive ? 'text-[#007b83]' : 'text-gray-700'}`} onClick={() => setIsOpen(false)}>
             Bien en location / Vendre
           </NavLink>
           <NavLink to="/conseil" className={({ isActive }) => `block font-medium ${isActive ? 'text-[#007b83]' : 'text-gray-700'}`} onClick={() => setIsOpen(false)}>
             Actus & Conseils
           </NavLink>
-          <NavLink to="/recherche" className={({ isActive }) => `block font-medium ${isActive ? 'text-[#007b83]' : 'text-gray-700'}`} onClick={() => setIsOpen(false)}>
-            Recherche
+          <NavLink to="/catalogue" className={({ isActive }) => `block font-medium ${isActive ? 'text-[#007b83]' : 'text-gray-700'}`} onClick={() => setIsOpen(false)}>
+            Catalogue
           </NavLink>
           <NavLink to="/contact" className={({ isActive }) => `block font-medium ${isActive ? 'text-[#007b83]' : 'text-gray-700'}`} onClick={() => setIsOpen(false)}>
             Contact
@@ -86,15 +89,12 @@ const Navbar = () => {
           
           <hr className="border-gray-100" />
           
+          {/* Action unique mobile */}
           <div className="flex flex-col space-y-3">
             <NavLink to="/connexion" onClick={() => setIsOpen(false)}>
-              <button className="w-full py-2 text-center font-semibold text-[#007b83] border border-[#007b83] rounded-md">
+              <button className="w-full flex items-center justify-center gap-2 py-2 text-center font-semibold text-[#007b83] border border-[#007b83] rounded-md">
+                <User size={18} />
                 Se connecter
-              </button>
-            </NavLink>
-            <NavLink to="/inscription" onClick={() => setIsOpen(false)}>
-              <button className="w-full py-2 text-center font-semibold text-white bg-[#007b83] rounded-md">
-                S'inscrire
               </button>
             </NavLink>
           </div>
