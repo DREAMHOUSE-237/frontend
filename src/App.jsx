@@ -6,6 +6,7 @@ import Footer from './components/Footer'
 import Equipe from './components/Equipe'
 import ActusConseils from './pages/Conseil'
 import Recherche from './pages/Recherche'
+import ProprietaireHome from './Proprietaire/Accueil2'
 import Contact from './pages/Contact'
 import Inscription from './pages/Inscription'
 import Connexion from './pages/Connexion'
@@ -49,6 +50,7 @@ function App() {
            <Route path='/inscription' element={<Inscription/>} />
            <Route path='/connexion2' element={<LoginForm/>}/>
            <Route path='/connexion' element={<Connexion/>}/>
+           <Route path='/accueil2' element={<ProprietaireHome/>}/>
            <Route path='/publication' element={< Publication/>}/>
            <Route path='/profile' element={< ProfilePage /> }/>
            <Route path='/mes-publications' element={<MyPublications/>}/>

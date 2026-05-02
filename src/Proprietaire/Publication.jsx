@@ -1,17 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     ChevronLeft, ChevronRight, MapPin, Layout,
     Sparkles, Type, AlignLeft, DollarSign, Clock, Check,
-    Camera, Plus, Home, X, Navigation, Search
+    Camera, Plus, Home, X, Navigation, Search, Maximize2, Minimize2
 } from 'lucide-react';
+import LocationPicker from '../components/Map/LocationPicker';
+import SearchLocation from '../components/Map/SearchLocation';
+
 
 const PublicationAnnonce = () => {
     const [step, setStep] = useState(1);
     const [images, setImages] = useState([]);
     const [typePublication, setTypePublication] = useState('');
     const [categorie, setCategorie] = useState('');
-    
-    // États pour la position
+    const [isMapExpanded, setIsMapExpanded] = useState(false);
+    const [position, setPosition] = useState(null);
+    const [mapPosition, setMapPosition] = useState([3.848, 11.502]);
+
+
     const [ville, setVille] = useState('');
     const [quartier, setQuartier] = useState('');
     const [region, setRegion] = useState('');
@@ -36,15 +42,31 @@ const PublicationAnnonce = () => {
         setImages(updatedImages);
     };
 
+    useEffect(() => {
+        if (isMapExpanded) {
+
+            document.body.style.overflow = 'hidden';
+        } else {
+
+            document.body.style.overflow = 'unset';
+        }
+
+
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [isMapExpanded]);
+
     return (
         <div className="min-h-screen bg-white flex flex-col w-full font-sans text-gray-900">
 
             {/* HEADER & STEPPER PROGRESSION */}
-            <div className="bg-white border-b sticky top-0 z-20 w-full pt-6 shadow-sm">
+
+            <div className="bg-white w-full pt-10 pb-4">
                 <div className="max-w-7xl mx-auto px-6">
-                    <div className="flex items-center justify-between mb-8">
-                        <h1 className="text-xl font-bold text-gray-800 tracking-tight center">Détails de l'annonce</h1>
-                        <div className="w-10"></div>
+                    <div className="text-center mb-10">
+                        <h1 className="text-2xl font-black text-[#1a2b3c] tracking-tight">
+                            Publier une Annonce
+                        </h1>
+                        <div className="h-1 w-12 bg-[#f97316] mx-auto mt-2 rounded-full"></div>
                     </div>
 
                     <div className="relative flex justify-between items-end mb-4 px-4 sm:px-20">
@@ -166,13 +188,13 @@ const PublicationAnnonce = () => {
 
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide">
-                                    <Navigation size={16}  /> Region
+                                    <Navigation size={16} /> Region
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={region}
                                     onChange={(e) => setVille(e.target.value)}
-                                    placeholder="Ex: Centre, Littoral..." 
+                                    placeholder="Ex: Centre, Littoral..."
                                     className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-all shadow-sm"
                                 />
                             </div>
@@ -181,24 +203,24 @@ const PublicationAnnonce = () => {
                                 <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide">
                                     <Navigation size={16} /> Ville
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={ville}
                                     onChange={(e) => setVille(e.target.value)}
-                                    placeholder="Ex: Yaoundé, Douala..." 
+                                    placeholder="Ex: Yaoundé, Douala..."
                                     className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-all shadow-sm"
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide">
-                                    <MapPin size={16}  /> Quartier
+                                    <MapPin size={16} /> Quartier
                                 </label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={quartier}
                                     onChange={(e) => setQuartier(e.target.value)}
-                                    placeholder="Ex: Bastos, Bonapriso..." 
+                                    placeholder="Ex: Bastos, Bonapriso..."
                                     className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-all shadow-sm"
                                 />
                             </div>
@@ -206,28 +228,55 @@ const PublicationAnnonce = () => {
 
                         {/* Cadre de la Carte */}
                         <div className="space-y-4">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500">Localisation sur la carte</h3>
-                            <div className="relative w-full aspect-video bg-gray-100 rounded-3xl border-2 border-gray-100 shadow-inner overflow-hidden flex items-center justify-center">
-                                {/* Fond simulant une carte */}
-                                <div className="absolute inset-0 opacity-40 bg-[url('https://www.google.com/maps/vt/pb=!1m4!1m3!1i12!2i1256!3i1256!2m3!1e0!2sm!3i349018013!3m8!2sen!3sus!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0')] bg-cover"></div>
-                                
-                                {/* Overlay et Pin central */}
-                                <div className="relative z-10 flex flex-col items-center gap-2">
-                                    <div className="bg-white p-4 rounded-full shadow-2xl animate-bounce">
-                                        <MapPin size={40} className="text-[#007b83] fill-teal-50" />
-                                    </div>
-                                    <span className="bg-[#007b83] text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg">POINT GPS</span>
-                                </div>
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">
+                                    Localisation précise (Cliquez sur la carte)
+                                </h3>
 
-                                {/* Bouton de recherche sur carte fictif */}
-                                <div className="absolute top-4 left-4 right-4">
-                                    <div className="bg-white/90 backdrop-blur-sm p-2 rounded-xl shadow-lg flex items-center gap-2 border border-white">
-                                        <Search size={18} className="text-gray-400 ml-2" />
-                                        <input type="text" placeholder="Rechercher une adresse..." className="bg-transparent border-none outline-none w-full text-sm" disabled />
-                                    </div>
-                                </div>
+                                <button
+                                    onClick={() => setIsMapExpanded(!isMapExpanded)}
+                                    className={`flex items-center gap-2 text-[10px] font-bold transition-all ${isMapExpanded
+                                        ? 'fixed top-6 right-6 z-[10001] bg-white text-red-500 shadow-2xl px-4 py-2 rounded-xl border border-red-50'
+                                        : 'relative z-10 text-[#007b83] hover:bg-teal-50 px-3 py-1.5 rounded-full'
+                                        }`}
+                                >
+                                    {isMapExpanded ? <><Minimize2 size={14} /> QUITTER LE PLEIN ÉCRAN</> : <><Maximize2 size={14} /> PLEIN ÉCRAN</>}
+                                </button>
                             </div>
-                            <p className="text-center text-[11px] text-gray-400 italic">La carte interactive sera activée après l'intégration de l'API de géolocalisation.</p>
+
+
+                            <div className={`transition-all ${isMapExpanded ? 'fixed top-6 left-1/2 -translate-x-1/2 z-[10001] w-full max-w-md px-4' : 'relative z-30'}`}>
+                                <SearchLocation setMapPosition={setMapPosition} />
+                            </div>
+
+
+                            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isMapExpanded
+                                    ? 'fixed top-[72px] left-0 right-0 bottom-0 z-40 bg-white w-screen h-[calc(100vh-72px)] rounded-none'
+                                    : 'relative w-full aspect-video md:aspect-[21/9] rounded-[2.5rem] border-4 border-white shadow-xl shadow-gray-200/50'
+                                }`}>
+                                <LocationPicker
+                                    setPosition={setPosition}
+                                    mapPosition={mapPosition}
+                                    isExpanded={isMapExpanded}
+                                />
+
+                                {/* Badge d'information */}
+                                {position && (
+                                    <div className={`absolute z-[31] bg-[#1a2b3c] text-white p-3 rounded-2xl shadow-2xl transition-all ${isMapExpanded ? 'bottom-10 left-10' : 'bottom-6 left-6'
+                                        }`}>
+                                        <p className="text-[10px] font-black tracking-widest uppercase opacity-70">Coordonnées capturées</p>
+                                        <p className="text-xs font-bold font-mono">
+                                            {position.lat.toFixed(4)}, {position.lng.toFixed(4)}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {!isMapExpanded && (
+                                <p className="text-center text-[11px] text-gray-400 italic">
+                                    Astuce : Recherchez votre quartier puis cliquez précisément sur l'emplacement du bien.
+                                </p>
+                            )}
                         </div>
                     </div>
                 )}

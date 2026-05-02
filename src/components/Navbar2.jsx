@@ -8,6 +8,7 @@ import {
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false); // Initialisation indispensable pour éviter l'erreur
   const profileRef = useRef(null);
 
   // Simulation des données utilisateur
@@ -15,6 +16,15 @@ const Navbar = () => {
     prenom: "Kieran",
     avatar: null
   };
+
+  // Détecter le scroll pour l'effet visuel
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Fermer le dropdown si on clique ailleurs
   useEffect(() => {
@@ -34,7 +44,8 @@ const Navbar = () => {
       : "text-gray-700 hover:text-[#007b83] transition-colors";
 
   return (
-    <nav className="bg-white shadow-sm font-sans relative z-50">
+    /* sticky top-0 et z-50 fixent la barre au dessus de tout au scroll */
+    <nav className={`sticky top-0 z-[50] bg-white transition-all duration-300 font-sans ${scrolled ? 'shadow-md py-1' : 'shadow-sm py-2'}`}>
       {/* --- BARRE PRINCIPALE --- */}
       <div className="flex items-center justify-between px-6 py-3">
 
@@ -51,12 +62,10 @@ const Navbar = () => {
 
         {/* Liens centraux (Desktop) */}
         <div className="hidden md:flex items-center space-x-6 text-sm font-medium">
-          <NavLink to="/" className={linkStyles}>
-            Bien en location <span className="text-gray-300 mx-1">|</span> Vendre
+          <NavLink to="/accueil2" className={linkStyles}>
+            Accueil
           </NavLink>
-          <NavLink to="/conseil" className={linkStyles}>Actus & Conseils</NavLink>
-          <NavLink to="/recherche" className={linkStyles}>Recherche</NavLink>
-          <NavLink to="/contact" className={linkStyles}>Contact</NavLink>
+          <NavLink to="/catalogue" className={linkStyles}>Catalogue</NavLink>
           <NavLink to="/publication" className={linkStyles}>Publier mon bien</NavLink>
         </div>
 
@@ -126,18 +135,13 @@ const Navbar = () => {
         <div className="md:hidden bg-white border-t border-gray-100 px-6 py-6 space-y-6 shadow-xl absolute w-full left-0 z-50 animate-in slide-in-from-right duration-300">
           {/* Navigation standard */}
           <div className="space-y-4 font-semibold text-lg">
-            <NavLink to="/" className={({isActive}) => `block ${isActive ? 'text-[#007b83]' : 'text-gray-800'}`} onClick={() => setIsOpen(false)}>
-                Bien en location / Vendre
+            <NavLink to="/accueil2" className={({isActive}) => `block ${isActive ? 'text-[#007b83]' : 'text-gray-800'}`} onClick={() => setIsOpen(false)}>
+                Accueil
             </NavLink>
-            <NavLink to="/conseil" className={({isActive}) => `block ${isActive ? 'text-[#007b83]' : 'text-gray-800'}`} onClick={() => setIsOpen(false)}>
-                Actus & Conseils
+            <NavLink to="/catalogue" className={({isActive}) => `block ${isActive ? 'text-[#007b83]' : 'text-gray-800'}`} onClick={() => setIsOpen(false)}>
+                Catalogue
             </NavLink>
-            <NavLink to="/recherche" className={({isActive}) => `block ${isActive ? 'text-[#007b83]' : 'text-gray-800'}`} onClick={() => setIsOpen(false)}>
-                Recherche
-            </NavLink>
-            <NavLink to="/contact" className={({isActive}) => `block ${isActive ? 'text-[#007b83]' : 'text-gray-800'}`} onClick={() => setIsOpen(false)}>
-                Contact
-            </NavLink>
+
             <NavLink to="/publication" className={({isActive}) => `block ${isActive ? 'text-[#007b83]' : 'text-gray-800'}`} onClick={() => setIsOpen(false)}>
                 Publier mon bien
             </NavLink>
