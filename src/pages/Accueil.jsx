@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { 
   BedDouble, Bath, Calendar, Car, Search, 
-  ChevronLeft, ChevronRight, MessageCircle, 
-  Handshake, Calculator, Coins 
+  ChevronLeft, ChevronRight,MapPin, MessageCircle, 
+  Home, Calculator, Coins 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import acc1 from '../assets/acc1.png';
-import acc2 from '../assets/acc2.jpg';
-import acc3 from '../assets/acc3.jpg';
+
 
 const Accueil = () => {
   const navigate = useNavigate();
 
   // --- LOGIQUE DE L'ANIMATION DYNAMIQUE ---
   const [index, setIndex] = useState(0);
-  const words = ["ressemble enfin.", "donne le sourire.", "appartient déjà."]; // <--- La définition manquante
+  const words = ["ressemble enfin.", "donne le sourire.", "appartient déjà."]; 
   const [subIndex, setSubIndex] = useState(0);
   const [reverse, setReverse] = useState(false);
 
@@ -36,17 +35,23 @@ const Accueil = () => {
 
     return () => clearTimeout(timeout);
   }, [subIndex, index, reverse]);
-  // ------------------------------------------
+
 
   // État pour la pagination
   const [currentPage, setCurrentPage] = useState(1);
   const annoncesPerPage = 6;
 
-  const annonces = [
-    { id: 1, titre: "Appartement meublé", prix: 3000000, localisation: "Bastos, Yaoundé", chambres: 3, douches: 4, duree: 3, parking: true, img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=600" },
-    // ... tes autres annonces ...
-  ];
-
+const annonces = [
+  { id: 1, titre: "Cassablanca", prix: 90000, localisation: "Bonapriso, DOUALA", pieces: 34, img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=600" },
+  { id: 2, titre: "Titre", prix: 45000, localisation: "Simbock, YAOUNDE", pieces: 57, img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=600" },
+  { id: 3, titre: "Cassablanca2", prix: 25000, localisation: "Simbock, YAOUNDE", pieces: 7, img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=600" },
+  { id: 4, titre: "Titre_Foncier_N-234", prix: 150, localisation: "Bastos, YAOUNDE", pieces: 23, img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=600" },
+  { id: 5, titre: "Appartement meublé", prix: 2300000, localisation: "Bastos, YAOUNDE", pieces: 5, img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=600" },
+  { id: 6, titre: "Appartement meublé", prix: 2300000, localisation: "Bastos, YAOUNDE", pieces: 4, img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=600" },
+  { id: 7, titre: "Appartement meublé", prix: 2300000, localisation: "Bastos, YAOUNDE", pieces: 6, img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=600" },
+  { id: 8, titre: "Appartement meublé", prix: 2300000, localisation: "Bastos, YAOUNDE", pieces: 3, img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=600" },
+  { id: 9, titre: "Appartement meublé", prix: 2300000, localisation: "Bastos, YAOUNDE", pieces: 8, img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=600" },
+];
   const indexOfLastAnnonce = currentPage * annoncesPerPage;
   const indexOfFirstAnnonce = indexOfLastAnnonce - annoncesPerPage;
   const currentAnnonces = annonces.slice(indexOfFirstAnnonce, indexOfLastAnnonce);
@@ -87,94 +92,127 @@ const Accueil = () => {
               Découvrez une sélection exclusive de biens d'exception au cœur du Cameroun.
             </p>
 
-            <div className="flex gap-4 justify-center pt-6">
-               <button className="px-8 py-4 bg-[#007b83] text-white rounded-xl font-bold hover:scale-105 transition-all shadow-lg shadow-[#007b83]/30">
-                  Explorer les biens
-               </button>
-            </div>
+            
           </div>
         </div>
       </div>
 
       {/* Section des Annonces */}
-      <section className="py-16 px-6 max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#007b83] inline-block border-b-4 border-[#007b83] pb-2">
-            Propositions récentes
-          </h2>
+<section className="py-12 px-6 max-w-[1600px] mx-auto">
+  <div className="flex justify-between items-center mb-8">
+    <div>
+      <h2 className="text-2xl md:text-3xl font-bold text-[#1a2b3c]">
+        Annonces Actuelles
+      </h2>
+    </div>
+    <span className="text-gray-500 text-sm font-medium">
+      {annonces.length} annonces disponibles
+    </span>
+  </div>
+
+  {/* Grille de 4 colonnes sur desktop */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {annonces.slice(0, 4).map((annonce) => (
+      <div
+        key={annonce.id}
+        onClick={() => navigate(`/details/${annonce.id}`)}
+        className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group border border-gray-100 overflow-hidden flex flex-col"
+      >
+        {/* Image - Hauteur ajustée pour le format 4 colonnes */}
+        <div className="relative h-48 overflow-hidden">
+          <img 
+            src={annonce.img} 
+            alt={annonce.titre} 
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+          />
         </div>
 
-        {/* Grille d'affichage des 6 annonces actuelles */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {currentAnnonces.map((annonce) => (
-            <div
-              key={annonce.id}
-              onClick={() => navigate(`/details/${annonce.id}`)}
-              className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group flex flex-col h-full border border-gray-100 overflow-hidden"
-            >
-              <div className="relative h-64 overflow-hidden">
-                <img src={annonce.img} alt={annonce.titre} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-              </div>
-
-              <div className="p-6 flex flex-col flex-grow">
-                <h3 className="text-[#007b83] text-xl font-extrabold mb-1">{annonce.titre}</h3>
-                <p className="text-xl font-bold text-gray-700 mb-2">{annonce.prix.toLocaleString()} Fcfa</p>
-                <p className="text-gray-500 text-sm line-clamp-2 mb-6">{annonce.localisation}</p>
-
-                <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <BedDouble size={20} className="text-green-700" />
-                    <span className="font-bold text-gray-700">{annonce.chambres}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Bath size={20} className="text-orange-500" />
-                    <span className="font-bold text-gray-700">{annonce.douches}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar size={20} className="text-[#007b83]" />
-                    <span className="font-bold text-gray-700">{annonce.duree}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Car size={20} className="text-red-600" />
-                  </div>
-                </div>
-              </div>
+        <div className="p-5 flex-1 flex flex-col">
+          {/* Prix et Note */}
+          <div className="flex justify-between items-center mb-2">
+            <p className="text-xl font-extrabold text-[#f97316]">
+              {annonce.prix.toLocaleString()} XAF <span className="text-xs font-normal text-gray-500">/ {annonce.type_prix || 'vente'}</span>
+            </p>
+            <div className="flex items-center gap-1 text-[#facc15]">
+              <span className="text-sm font-bold text-gray-700">4.0</span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+              </svg>
             </div>
-          ))}
-        </div>
-
-        {/* 4. Barre de Pagination (S'affiche seulement si > 6 annonces) */}
-        {annonces.length > annoncesPerPage && (
-          <div className="mt-12 flex justify-center items-center gap-2">
-            <button
-              onClick={() => currentPage > 1 && paginate(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={`p-2 rounded-lg border transition-all ${currentPage === 1 ? 'text-gray-300 border-gray-100' : 'text-[#007b83] border-[#007b83] hover:bg-[#007b83] hover:text-white'}`}
-            >
-              <ChevronLeft size={24} />
-            </button>
-
-            {[...Array(totalPages)].map((_, i) => (
-              <button
-                key={i + 1}
-                onClick={() => paginate(i + 1)}
-                className={`w-10 h-10 rounded-lg font-bold transition-all ${currentPage === i + 1 ? 'bg-[#007b83] text-white' : 'text-gray-400 hover:bg-gray-100'}`}
-              >
-                {i + 1}
-              </button>
-            ))}
-
-            <button
-              onClick={() => currentPage < totalPages && paginate(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className={`p-2 rounded-lg border transition-all ${currentPage === totalPages ? 'text-gray-300 border-gray-100' : 'text-[#007b83] border-[#007b83] hover:bg-[#007b83] hover:text-white'}`}
-            >
-              <ChevronRight size={24} />
-            </button>
           </div>
-        )}
-      </section>
 
+          {/* Titre */}
+          <h4 className="text-xl font-bold text-gray-800 mb-2 truncate">
+            {annonce.titre}
+          </h4>
+
+          {/* Badge Type */}
+          <div className="mb-4">
+            <span className="bg-blue-100 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase">
+              {annonce.type || "Appartement"}
+            </span>
+          </div>
+
+          {/* Localisation et Nombre de pièces */}
+          <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between text-gray-500">
+            <div className="flex items-center gap-1 text-xs truncate">
+              <MapPin size={14} className="text-blue-500" />
+              {annonce.localisation}
+            </div>
+            <div className="flex items-center gap-1 text-xs whitespace-nowrap">
+              <Home size={14} />
+              {annonce.pieces || "0"} pièces
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* Bouton "Découvrir plus de biens" uniquement en bas */}
+  <div className="mt-12 flex justify-center">
+    <button
+      onClick={() => navigate('/catalogue')}
+      className="flex items-center gap-3 px-8 py-4 bg-white border border-gray-200 text-gray-800 rounded-2xl font-bold hover:bg-gray-50 hover:shadow-md transition-all duration-300"
+    >
+      Découvrir plus de biens
+      <ChevronRight size={20} />
+    </button>
+  </div>
+</section>
+
+{/* Section : Appel à l'action Propriétaires - Pleine largeur sans arrondis */}
+      <section className="w-full bg-[#007b83] mt-12">
+        <div className="max-w-[1600px] mx-auto px-6 py-16 md:py-20">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+            
+            {/* Partie Gauche : Bouton massif */}
+            <div className="w-full md:w-auto order-2 md:order-1">
+              <button 
+                onClick={() => navigate('/connexion')}
+                className="group flex items-center justify-center gap-4 w-full md:w-auto px-12 py-6 bg-white text-[#007b83] font-black text-xl hover:bg-gray-100 rounded-xl transition-all duration-300 shadow-xl active:scale-95"
+              >
+                Commencer maintenant
+                <ChevronRight className="group-hover:translate-x-2 transition-transform" />
+              </button>
+            </div>
+
+            {/* Partie Droite : Texte explicatif simplifié */}
+            <div className="flex-1 text-white text-center md:text-left order-1 md:order-2">
+              <h3 className="text-3xl md:text-5xl font-black mb-6 uppercase tracking-tight">
+                Vous êtes propriétaire ou agent ?
+              </h3>
+              <p className="text-white/90 text-xl md:text-2xl leading-relaxed font-medium">
+                Maximisez la visibilité de vos biens en quelques clics. 
+                <span className="block mt-4 font-bold text-white border-l-4 border-white/30 pl-4">
+                  Connectez-vous pour publier vos annonces et vous faire contacter directement par des personnes intéressées par vos biens.
+                </span>
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
