@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  MapPin, DollarSign, Key, Calendar, Users, 
+import {
+  MapPin, DollarSign, Key, Calendar, Users,
   MessageSquare, Send, User,
   Maximize2, Minimize2,
   ChevronLeft, ChevronRight, X
@@ -52,35 +52,35 @@ const Details = () => {
 
   return (
     <div className="max-w-screen-2xl mx-auto p-4 md:p-10 font-sans text-gray-800 bg-white">
-      
+
       {showLightbox && (
         <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 select-none">
-          <button onClick={() => setShowLightbox(false)} className="absolute top-6 right-6 text-white/70 hover:text-white z-10"><X size={40}/></button>
-          <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronLeft size={32}/></button>
-          <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronRight size={32}/></button>
+          <button onClick={() => setShowLightbox(false)} className="absolute top-6 right-6 text-white/70 hover:text-white z-10"><X size={40} /></button>
+          <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronLeft size={32} /></button>
+          <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronRight size={32} /></button>
           <img src={images[activeImg]} className="max-h-[90vh] max-w-[90vw] rounded shadow-2xl object-contain animate-in fade-in zoom-in-95 duration-300" alt="" />
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-        
+
         <div className="lg:col-span-8 space-y-10">
           <div className="space-y-4">
             <div className="relative group overflow-hidden rounded-xl bg-gray-100 aspect-[16/9]">
               <img src={images[activeImg]} className="w-full h-full object-cover" alt="Principal" />
               <div className="absolute inset-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <button onClick={prevImage} className="p-3 bg-white/80 rounded-full shadow hover:bg-white"><ChevronLeft size={24}/></button>
-                <button onClick={nextImage} className="p-3 bg-white/80 rounded-full shadow hover:bg-white"><ChevronRight size={24}/></button>
+                <button onClick={prevImage} className="p-3 bg-white/80 rounded-full shadow hover:bg-white"><ChevronLeft size={24} /></button>
+                <button onClick={nextImage} className="p-3 bg-white/80 rounded-full shadow hover:bg-white"><ChevronRight size={24} /></button>
               </div>
               <button onClick={() => setShowLightbox(true)} className="absolute bottom-6 right-6 bg-black/50 text-white p-3 rounded hover:bg-black transition-colors"><Maximize2 size={22} /></button>
             </div>
-            
+
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
               {images.map((img, i) => (
-                <img 
-                  key={i} src={img} 
+                <img
+                  key={i} src={img}
                   onClick={() => setActiveImg(i)}
-                  className={`w-32 h-20 object-cover rounded cursor-pointer border-2 transition-all ${activeImg === i ? 'border-[#007b83] scale-105 shadow-md' : 'border-transparent opacity-70 hover:opacity-100'}`} 
+                  className={`w-32 h-20 object-cover rounded cursor-pointer border-2 transition-all ${activeImg === i ? 'border-[#007b83] scale-105 shadow-md' : 'border-transparent opacity-70 hover:opacity-100'}`}
                   alt={`miniature ${i + 1}`}
                 />
               ))}
@@ -96,10 +96,10 @@ const Details = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-2 bg-gray-50/50 p-6 rounded-xl">
-            <InfoLine icon={<DollarSign size={18}/>} label="Prix du Loyer" value="2,300,000 FCFA" />
-            <InfoLine icon={<Key size={18}/>} label="Type de Publication" value="Location" />
-            <InfoLine icon={<Calendar size={18}/>} label="Superficie" value="300 m²" />
-            <InfoLine icon={<Users size={18}/>} label="Nombre de Pieces" value="5" />
+            <InfoLine icon={<DollarSign size={18} />} label="Prix du Loyer" value="2,300,000 FCFA" />
+            <InfoLine icon={<Key size={18} />} label="Type de Publication" value="Location" />
+            <InfoLine icon={<Calendar size={18} />} label="Superficie" value="300 m²" />
+            <InfoLine icon={<Users size={18} />} label="Nombre de Pieces" value="5" />
           </div>
 
           <div className="pt-8 space-y-6">
@@ -118,25 +118,29 @@ const Details = () => {
         </div>
 
         <div className="lg:col-span-4 space-y-12">
-          
-          <div className={`${isMapMaximized ? 'fixed inset-0 z-[150] p-10 bg-black/90' : 'relative'} transition-all duration-300`}>
-            <div className={`bg-gray-100 border border-gray-200 rounded-xl overflow-hidden relative shadow-md ${isMapMaximized ? 'h-full w-full' : 'h-96'}`}>
-      
-      <button 
-        onClick={() => setIsMapMaximized(!isMapMaximized)}
-        className="absolute top-4 right-4 z-[1000] bg-white p-2.5 rounded shadow-lg"
-      >
-        {isMapMaximized ? <Minimize2 size={22} /> : <Maximize2 size={22} />}
-      </button>
 
-      {/* IMPORTANT : On passe readOnly={true} ici */}
-      <LocationPicker 
-        mapPosition={bienCoords} 
-        isExpanded={isMapMaximized}
-        readOnly={true} 
-      />
-      
-    </div>
+          {/* SECTION CARTE */}
+          <div className={isMapMaximized
+            ? 'fixed top-0 left-0 w-screen h-screen z-[100000] bg-white'
+            : 'relative h-96 transition-all duration-500 z-10'
+          }>
+            <div className={`relative h-full w-full ${isMapMaximized ? 'rounded-none' : 'rounded-2xl shadow-xl border border-gray-100 overflow-hidden'}`}>
+
+              {/* Bouton pour quitter le plein écran - Placé au-dessus de la carte */}
+              <button
+                onClick={() => setIsMapMaximized(!isMapMaximized)}
+                className="absolute top-6 right-6 z-[100001] bg-white p-3 rounded-full shadow-2xl text-gray-700 hover:scale-110 active:scale-95 transition-all border border-gray-100"
+              >
+                {isMapMaximized ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
+              </button>
+
+              {/* Ton composant Leaflet */}
+              <LocationPicker
+                mapPosition={bienCoords}
+                isExpanded={isMapMaximized}
+                readOnly={true}
+              />
+            </div>
           </div>
 
           <div className="border border-gray-100 rounded-2xl p-10 text-center space-y-6 shadow-sm bg-white">
@@ -147,9 +151,9 @@ const Details = () => {
               <h3 className="font-bold text-2xl italic uppercase tracking-tighter text-gray-900">OBAM Sylvia</h3>
               <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.2em]">Agent Immobilier</p>
             </div>
-            <a 
-              href="https://wa.me/237694907134" 
-              target="_blank" 
+            <a
+              href="https://wa.me/237694907134"
+              target="_blank"
               rel="noreferrer"
               className="w-full bg-[#007b83] text-white py-5 rounded-lg font-bold text-base flex items-center justify-center gap-3 hover:bg-[#00666d] transition-all shadow-lg uppercase"
             >
@@ -172,7 +176,7 @@ const Details = () => {
             </div>
 
             <div className="pt-4 space-y-4">
-              <textarea 
+              <textarea
                 className="w-full border border-gray-100 p-4 text-sm rounded-xl outline-none focus:border-[#007b83] transition bg-gray-50 italic"
                 placeholder="Posez votre question à Sylvia..."
                 rows="4"
