@@ -5,12 +5,16 @@ import {
   Maximize2, Minimize2,
   ChevronLeft, ChevronRight, X
 } from 'lucide-react';
+import LocationPicker from '../components/Map/LocationPicker';
 
 const Details = () => {
   const [comment, setComment] = useState("");
   const [isMapMaximized, setIsMapMaximized] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
+
+  // Coordonnées fictives (à remplacer par les data de ton API)
+  const bienCoords = { lat: 3.8955, lng: 11.5110 };
 
   const images = [
     "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070",
@@ -24,10 +28,7 @@ const Details = () => {
     { id: 2, user: "Alice Mbarga", text: "La caution est-elle négociable ?", date: "Il y a 2 jours" },
     { id: 3, user: "Marc Etoundi", text: "Superbe vue sur le Golf, je recommande.", date: "Il y a 5 jours" },
     { id: 4, user: "Samuel", text: "Le forage fonctionne-t-il avec un suppresseur ?", date: "Lundi" },
-    { id: 5, user: "Samuel", text: "Le forage fonctionne-t-il avec un suppresseur ?", date: "Lundi" },
-    { id: 6, user: "Samuel", text: "Le forage fonctionne-t-il avec un suppresseur ?", date: "Lundi" },
-    { id: 7, user: "Samuel", text: "Le forage fonctionne-t-il avec un suppresseur ?", date: "Lundi" },
-    { id: 8, user: "Samuel", text: "Le forage fonctionne-t-il avec un suppresseur ?", date: "Lundi" }
+    { id: 5, user: "Samuel", text: "Le forage fonctionne-t-il avec un suppresseur ?", date: "Lundi" }
   ];
 
   const nextImage = useCallback(() => {
@@ -50,7 +51,6 @@ const Details = () => {
   }, [showLightbox, nextImage, prevImage]);
 
   return (
-    // Augmentation de la largeur max de 7xl (1280px) à 1536px (screen-2xl)
     <div className="max-w-screen-2xl mx-auto p-4 md:p-10 font-sans text-gray-800 bg-white">
       
       {showLightbox && (
@@ -62,12 +62,9 @@ const Details = () => {
         </div>
       )}
 
-      {/* Augmentation du gap entre les colonnes de 10 à 16 */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
         
-        {/* Colonne Gauche élargie à 8/12 pour combler le centre */}
         <div className="lg:col-span-8 space-y-10">
-          
           <div className="space-y-4">
             <div className="relative group overflow-hidden rounded-xl bg-gray-100 aspect-[16/9]">
               <img src={images[activeImg]} className="w-full h-full object-cover" alt="Principal" />
@@ -120,39 +117,36 @@ const Details = () => {
           </div>
         </div>
 
-        {/* Colonne Droite à 4/12 */}
         <div className="lg:col-span-4 space-y-12">
           
           <div className={`${isMapMaximized ? 'fixed inset-0 z-[150] p-10 bg-black/90' : 'relative'} transition-all duration-300`}>
-            {/* Augmentation de la hauteur de la carte de h-72 (288px) à h-96 (384px) */}
             <div className={`bg-gray-100 border border-gray-200 rounded-xl overflow-hidden relative shadow-md ${isMapMaximized ? 'h-full w-full' : 'h-96'}`}>
-              <button 
-                onClick={() => setIsMapMaximized(!isMapMaximized)}
-                className="absolute top-4 right-4 z-10 bg-white p-2.5 rounded shadow-lg hover:bg-gray-50 text-gray-600"
-              >
-                {isMapMaximized ? <Minimize2 size={22} /> : <Maximize2 size={22} />}
-              </button>
-              <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3980.653653139043!2d11.512687111245052!3d3.8842636960781794!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x108bcf7746538421%3A0xc3f34563a61f43a!2sBastos%2C%20Yaound%C3%A9!5e0!3m2!1sfr!2scm!4v1711012345678!5m2!1sfr!2scm" 
-                className="w-full h-full grayscale-[0.2]"
-                style={{ border: 0 }} 
-                allowFullScreen="" 
-                loading="lazy"
-                title="Carte Bastos Yaoundé"
-              ></iframe>
-            </div>
+      
+      <button 
+        onClick={() => setIsMapMaximized(!isMapMaximized)}
+        className="absolute top-4 right-4 z-[1000] bg-white p-2.5 rounded shadow-lg"
+      >
+        {isMapMaximized ? <Minimize2 size={22} /> : <Maximize2 size={22} />}
+      </button>
+
+      {/* IMPORTANT : On passe readOnly={true} ici */}
+      <LocationPicker 
+        mapPosition={bienCoords} 
+        isExpanded={isMapMaximized}
+        readOnly={true} 
+      />
+      
+    </div>
           </div>
 
-          {/* Augmentation du padding interne p-6 -> p-10 */}
           <div className="border border-gray-100 rounded-2xl p-10 text-center space-y-6 shadow-sm bg-white">
             <div className="w-24 h-24 bg-gray-100 rounded-full mx-auto flex items-center justify-center border border-gray-50">
               <User size={48} className="text-gray-300" />
             </div>
             <div>
-              <h3 className="font-bold text-2xl italic uppercase tracking-tighter">OBAM Sylvia</h3>
+              <h3 className="font-bold text-2xl italic uppercase tracking-tighter text-gray-900">OBAM Sylvia</h3>
               <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.2em]">Agent Immobilier</p>
             </div>
-            
             <a 
               href="https://wa.me/237694907134" 
               target="_blank" 
@@ -161,13 +155,10 @@ const Details = () => {
             >
               <MessageSquare size={22} /> Contact WhatsApp
             </a>
-            <button className="text-red-500 text-xs font-bold uppercase hover:underline tracking-widest pt-2">Signaler</button>
           </div>
 
           <div className="space-y-6">
             <h3 className="font-bold text-sm uppercase text-gray-400 tracking-[0.2em] italic border-b pb-4">Commentaires</h3>
-            
-            {/* Augmentation de la hauteur max des commentaires h-64 -> h-80 */}
             <div className="max-h-80 overflow-y-auto pr-3 space-y-6 scrollbar-thin scrollbar-thumb-gray-200">
               {commentsList.map(c => (
                 <div key={c.id} className="text-xs border-b border-gray-50 pb-4 italic last:border-0">
@@ -193,7 +184,6 @@ const Details = () => {
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>

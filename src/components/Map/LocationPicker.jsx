@@ -1,8 +1,8 @@
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
 import { useState, useEffect } from "react";
 import L from 'leaflet';
+import "leaflet/dist/leaflet.css"; // Assure-toi que le CSS est bien importé
 
-// Correction des icônes par défaut de Leaflet (évite les marqueurs invisibles)
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -14,11 +14,9 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// --- COMPOSANT DE MISE À JOUR DE LA TAILLE ---
 function ResizeMap({ isExpanded }) {
   const map = useMap();
   useEffect(() => {
-    // On attend la fin de l'animation CSS pour recalculer la taille
     const timer = setTimeout(() => {
       map.invalidateSize({ animate: true });
     }, 500); 
@@ -30,22 +28,23 @@ function ResizeMap({ isExpanded }) {
 function ChangeView({ center }) {
   const map = useMap();
   useEffect(() => {
-    if (center) map.setView(center, 13, { animate: true });
+    if (center) map.setView(center, 15, { animate: true });
   }, [center]);
   return null; 
 } 
 
-// AJOUT DE LA PROP isExpanded
-export default function LocationPicker({ setPosition, mapPosition, isExpanded }) {
+// AJOUT DE LA PROP fixedPosition ET readOnly
+export default function LocationPicker({ setPosition, mapPosition, isExpanded, readOnly = false }) {
   return (
     <MapContainer
       center={mapPosition}
-      zoom={13}
-      // Très important : height et width à 100% pour suivre le parent
+      zoom={15}
       style={{ height: "100%", width: "100%", borderRadius: isExpanded ? "0px" : "12px" }}
-      zoomSnap={0.5}
-      zoomDelta={0.5}
-      wheelPxPerZoomLevel={120}
+      // On désactive les interactions si c'est juste de la lecture
+      dragging={!readOnly}
+      touchZoom={!readOnly}
+      doubleClickZoom={!readOnly}
+      scrollWheelZoom={!readOnly}
     >
       <TileLayer
         url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
@@ -53,12 +52,15 @@ export default function LocationPicker({ setPosition, mapPosition, isExpanded })
         attribution="© Google Maps"
       />
 
-      {/* On appelle le fix de taille ici */}
       <ResizeMap isExpanded={isExpanded} />
-
       <ChangeView center={mapPosition} />
 
-      <LocationMarker setPosition={setPosition} />
+      {/* MODIFICATION ICI : On affiche le marqueur fixe DIRECTEMENT */}
+      {readOnly ? (
+        <Marker position={mapPosition} interactive={false} />
+      ) : (
+        <LocationMarker setPosition={setPosition} />
+      )}
     </MapContainer>
   );
 }
