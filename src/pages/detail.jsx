@@ -54,7 +54,7 @@ const Details = () => {
     <div className="max-w-screen-2xl mx-auto p-4 md:p-10 font-sans text-gray-800 bg-white">
 
       {showLightbox && (
-        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 select-none">
+        <div className="fixed inset-0 z-[100000] bg-black/95 flex items-center justify-center p-4 select-none">
           <button onClick={() => setShowLightbox(false)} className="absolute top-6 right-6 text-white/70 hover:text-white z-10"><X size={40} /></button>
           <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronLeft size={32} /></button>
           <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronRight size={32} /></button>
