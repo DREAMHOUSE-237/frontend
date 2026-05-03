@@ -236,7 +236,7 @@ const PublicationAnnonce = () => {
                                 <button
                                     onClick={() => setIsMapExpanded(!isMapExpanded)}
                                     className={`flex items-center gap-2 text-[10px] font-bold transition-all ${isMapExpanded
-                                        ? 'fixed top-6 right-6 z-[10001] bg-white text-red-500 shadow-2xl px-4 py-2 rounded-xl border border-red-50'
+                                        ? 'fixed top-6 right-6 z-[100001] bg-[#1a2b3c] text-white shadow-2xl px-6 py-3 rounded-2xl border border-white/10 hover:scale-105 active:scale-95'
                                         : 'relative z-10 text-[#007b83] hover:bg-teal-50 px-3 py-1.5 rounded-full'
                                         }`}
                                 >
@@ -244,30 +244,33 @@ const PublicationAnnonce = () => {
                                 </button>
                             </div>
 
-
-                            <div className={`transition-all ${isMapExpanded ? 'fixed top-6 left-1/2 -translate-x-1/2 z-[10001] w-full max-w-md px-4' : 'relative z-30'}`}>
+                            {/* Barre de recherche - Adaptée pour le plein écran */}
+                            <div className={`transition-all ${isMapExpanded ? 'fixed top-8 left-1/2 -translate-x-1/2 z-[100001] w-full max-w-md px-4' : 'relative z-30'}`}>
                                 <SearchLocation setMapPosition={setMapPosition} />
                             </div>
 
-
+                            {/* Conteneur de la Carte */}
                             <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isMapExpanded
-                                    ? 'fixed top-[72px] left-0 right-0 bottom-0 z-40 bg-white w-screen h-[calc(100vh-72px)] rounded-none'
-                                    : 'relative w-full aspect-video md:aspect-[21/9] rounded-[2.5rem] border-4 border-white shadow-xl shadow-gray-200/50'
+                                ? 'fixed inset-0 z-[100000] bg-white w-screen h-screen rounded-none'
+                                : 'relative w-full aspect-video md:aspect-[21/9] rounded-[2.5rem] border-4 border-white shadow-xl shadow-gray-200/50'
                                 }`}>
+
                                 <LocationPicker
                                     setPosition={setPosition}
                                     mapPosition={mapPosition}
                                     isExpanded={isMapExpanded}
                                 />
 
-                                {/* Badge d'information */}
+                                {/* Badge de Coordonnées (Temps Réel) */}
                                 {position && (
-                                    <div className={`absolute z-[31] bg-[#1a2b3c] text-white p-3 rounded-2xl shadow-2xl transition-all ${isMapExpanded ? 'bottom-10 left-10' : 'bottom-6 left-6'
+                                    <div className={`absolute z-[100001] bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-white transition-all ${isMapExpanded
+                                            ? 'bottom-10 right-10' // Positionné en bas à droite en plein écran
+                                            : 'bottom-6 left-6'    // Positionné en bas à gauche en mode réduit
                                         }`}>
-                                        <p className="text-[10px] font-black tracking-widest uppercase opacity-70">Coordonnées capturées</p>
-                                        <p className="text-xs font-bold font-mono">
-                                            {position.lat.toFixed(4)}, {position.lng.toFixed(4)}
-                                        </p>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Coordonnées</p>
+                                        <code className="text-xs font-bold text-[#007b83] font-mono">
+                                            {position.lat.toFixed(5)} , {position.lng.toFixed(5)}
+                                        </code>
                                     </div>
                                 )}
                             </div>

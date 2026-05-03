@@ -21,7 +21,7 @@ const Navbar = () => {
       : "text-gray-700 hover:text-[#007b83] transition-colors";
 
   return (
-    <nav className={`sticky top-0 z-50 bg-white transition-all duration-300 font-sans ${scrolled ? 'shadow-md py-1' : 'shadow-sm py-3'}`}>
+    <nav className={`sticky top-0 z-[10001] bg-white transition-all duration-300 font-sans ${scrolled ? 'shadow-md py-1' : 'shadow-sm py-3'}`}>
       <div className="flex items-center justify-between px-6 py-3">
         
         {/* Logo - Ajusté pour être à gauche sans marge excessive */}

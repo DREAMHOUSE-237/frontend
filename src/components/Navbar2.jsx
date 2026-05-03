@@ -45,7 +45,7 @@ const Navbar = () => {
 
   return (
     /* sticky top-0 et z-50 fixent la barre au dessus de tout au scroll */
-    <nav className={`sticky top-0 z-[50] bg-white transition-all duration-300 font-sans ${scrolled ? 'shadow-md py-1' : 'shadow-sm py-2'}`}>
+    <nav className={`sticky top-0 z-[100001] bg-white transition-all duration-300 font-sans ${scrolled ? 'shadow-md py-1' : 'shadow-sm py-2'}`}>
       {/* --- BARRE PRINCIPALE --- */}
       <div className="flex items-center justify-between px-6 py-3">
 
