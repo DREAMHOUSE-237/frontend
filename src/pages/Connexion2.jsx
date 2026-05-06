@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff , Loader2 } from 'lucide-react';
 import { login } from '../service/auth_service';
+import { useNavigate } from 'react-router-dom';
 
 const LoginForm = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [credentials, setCredentials] = useState({ email: '', password: '' });
     const [loading, setLoading] = useState(false);
     const [error , setError] = useState(null);
+    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
     e.preventDefault();
@@ -17,8 +19,9 @@ const LoginForm = () => {
         const data = await login(credentials.email, credentials.password);
         console.log("connexion reussie", data);
 
-        // ✅ redirection SEULEMENT si succès
-        window.location.href = "/accueil2";
+        if(data.token){
+            navigate("/accueil2")
+        }
 
     } catch (err) {
         console.log("Erreur reçue :", err);
