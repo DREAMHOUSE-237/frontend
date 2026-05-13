@@ -8,14 +8,14 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
-  // server: {
-  //   proxy: {
-  //     '/api': {
-  //       target: 'http://ec2-16-171-142-15.eu-north-1.compute.amazonaws.com:8080',
-  //       changeOrigin: true,
-  //       secure: false,
-  //       rewrite: (path) => path.replace(/^\/api/, '')
-  //     }
-  //   }
-  // }
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://api.16.171.142.15.nip.io',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
+  }
 })

@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState , useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   PlusCircle, 
@@ -10,9 +10,41 @@ import {
   ArrowRight 
 } from 'lucide-react';
 
+
 const ProprietaireHome = () => {
   const navigate = useNavigate();
-  const userName = "Kieran Junior"; 
+ const [userName, setUserName] = useState("Utilisateur");
+
+ useEffect(() => {
+  const userData = localStorage.getItem('user');
+  const token = localStorage.getItem('token');
+
+  if (userData) {
+    const user = JSON.parse(userData);
+    if (user.email) {
+      setUserName(user.email.split('@')[0]);
+      return; // On s'arrête ici si on a trouvé
+    }
+  }
+
+  // Secours : Décoder le token si l'objet user est absent
+  if (token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(window.atob(base64));
+      
+      const name = payload.email || payload.nom || "Utilisateur";
+      setUserName(name.includes('@') ? name.split('@')[0] : name);
+    } catch (e) {
+      console.error("Erreur décodage", e);
+    }
+  }
+}, []);
+
+  const user = {
+    prenom: userName,
+  };
   
   // Utilisation de l'image de partenariat pour le fond
   const partnerBg = "https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=1920&auto=format&fit=crop";
@@ -54,7 +86,7 @@ const ProprietaireHome = () => {
               </div>
               <div>
                 <p className="text-gray-300 text-xs uppercase font-black tracking-widest">Propriétaire Partenaire</p>
-                <p className="text-2xl font-bold text-white">{userName}</p>
+                <p className="text-2xl font-bold text-white">{user.prenom}</p>
               </div>
             </div>
           </div>

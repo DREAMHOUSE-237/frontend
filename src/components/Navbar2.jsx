@@ -5,17 +5,52 @@ import {
    LogOut, Menu, X
 } from 'lucide-react';
 
-const Navbar = () => {
+const Navbar2 = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false); // Initialisation indispensable pour éviter l'erreur
   const profileRef = useRef(null);
 
-  // Simulation des données utilisateur
+ const [userName, setUserName] = useState("Utilisateur");
+
+ useEffect(() => {
+  const userData = localStorage.getItem('user');
+  const token = localStorage.getItem('token');
+
+  if (userData) {
+    const user = JSON.parse(userData);
+    if (user.email) {
+      setUserName(user.email.split('@')[0]);
+      return; // On s'arrête ici si on a trouvé
+    }
+  }
+
+  // Secours : Décoder le token si l'objet user est absent
+  if (token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(window.atob(base64));
+      
+      const name = payload.email || payload.nom || "Utilisateur";
+      setUserName(name.includes('@') ? name.split('@')[0] : name);
+    } catch (e) {
+      console.error("Erreur décodage", e);
+    }
+  }
+}, []);
+
   const user = {
-    prenom: "Kieran",
+    prenom: userName,
     avatar: null
   };
+
+   const handleLogout = () => {
+    localStorage.clear();
+    localStorage.removeItem('token'); // On supprime le token
+    localStorage.removeItem('userId'); // Et les autres infos
+    window.location.href = '/connexion'; // Redirection propre
+};
 
   // Détecter le scroll pour l'effet visuel
   useEffect(() => {
@@ -112,7 +147,7 @@ const Navbar = () => {
                   </NavLink>
                 </div>
                 <div className="border-t border-gray-50 mt-1 pt-1">
-                  <DropdownItem icon={LogOut} label="Déconnexion" color="text-red-500" />
+                  <DropdownItem onClick={handleLogout} icon={LogOut} label="Déconnexion" color="text-red-500" />
                 </div>
               </div>
             )}
@@ -159,7 +194,7 @@ const Navbar = () => {
               <NavLink to="/mes-publications" onClick={() => setIsOpen(false)}>
                 <MobileLink icon={Building2} label="Mes propriétés" />
               </NavLink>
-              <MobileLink icon={LogOut} label="Déconnexion" color="text-red-500" />
+              <MobileLink onClick={handleLogout}  icon={LogOut} label="Déconnexion" color="text-red-500" />
             </div>
           </div>
         </div>
@@ -169,18 +204,24 @@ const Navbar = () => {
 };
 
 /* --- COMPOSANTS INTERNES --- */
-const DropdownItem = ({ icon: Icon, label, color = "text-gray-800" }) => (
-  <div className={`w-full flex items-center space-x-4 px-5 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer ${color}`}>
+const DropdownItem = ({ icon: Icon, label, color = "text-gray-800", onClick }) => (
+  <div 
+    onClick={onClick} // ✅ Indispensable pour que le clic fonctionne
+    className={`w-full flex items-center space-x-4 px-5 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer ${color}`}
+  >
     <Icon size={18} className="text-gray-400" />
-    <span className="text-sm ">{label}</span>
+    <span className="text-sm">{label}</span>
   </div>
 );
 
-const MobileLink = ({ icon: Icon, label, color = "text-gray-800" }) => (
-  <div className={`flex items-center space-x-4 py-1.5 cursor-pointer ${color}`}>
+const MobileLink = ({ icon: Icon, label, color = "text-gray-800", onClick }) => (
+  <div 
+    onClick={onClick} // ✅ Indispensable ici aussi
+    className={`flex items-center space-x-4 py-1.5 cursor-pointer ${color}`}
+  >
     <Icon size={22} className="text-gray-400" />
-    <span className="text-base ">{label}</span>
+    <span className="text-base">{label}</span>
   </div>
 );
 
-export default Navbar;
+export default Navbar2;

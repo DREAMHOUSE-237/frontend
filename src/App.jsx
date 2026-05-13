@@ -1,65 +1,136 @@
-import { useState } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
+import React, { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom"
+
+// Import des composants de base
 import Navbar from './components/Navbar'
-import Accueil from './pages/Accueil'
 import Footer from './components/Footer'
+import ScrollToTop from "./components/ScrollToTop"
 import Equipe from './components/Equipe'
+import Navbar2 from './components/Navbar2'
+
+// Import des pages publiques
+import Accueil from './pages/Accueil'
 import ActusConseils from './pages/Conseil'
 import Recherche from './pages/Recherche'
-import ProprietaireHome from './Proprietaire/Accueil2'
 import Contact from './pages/Contact'
 import Inscription from './pages/Inscription'
 import Connexion from './pages/Connexion'
-import ScrollToTop from "./components/ScrollToTop";
-import Publication from './Proprietaire/Publication'
-import ProfilePage from './Proprietaire/Profil'
-import MyPublications  from './Proprietaire/MesPublications'
-import ModifierPublication from './Proprietaire/ModificationImo'
 import LoginForm from './pages/Connexion2'
 import Details from './pages/detail'
+
+// Import des pages protégées
+import ProprietaireHome from './Proprietaire/Accueil2'
+import Publication from './Proprietaire/Publication'
+import ProfilePage from './Proprietaire/Profil'
+import MyPublications from './Proprietaire/MesPublications'
+import ModifierPublication from './Proprietaire/ModificationImo'
+import AdminIdentityDashboard from './admin/Admin'
+
 import './App.css'
 
-// Composant pour gérer l'affichage conditionnel
-const LayoutWrapper = ({ children }) => {
+// ==========================================================
+// 1. COMPOSANT DE PROTECTION DES ROUTES
+// ==========================================================
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  if (!token) return <Navigate to="/connexion" replace />;
+  return children;
+};
+
+// ==========================================================
+// 2. WRAPPER POUR LA MISE EN PAGE (NAVBAR/FOOTER)
+// ==========================================================
+const LayoutWrapper = ({ children, isAuthenticated, setIsAuthenticated }) => {
   const location = useLocation();
   
-  // Liste des routes où la Navbar et le Footer doivent être CACHÉS
-  // J'ai ajouté /inscription car souvent on les cache aussi là-bas
-  const hideLayout = ['/connexion', '/inscription'].includes(location.pathname);
+  // Pages où l'on cache la Navbar et le Footer
+  const hideLayout = ['/connexion2', '/connexion','/inscription'].includes(location.pathname);
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    setIsAuthenticated(false);
+  };
+ const token = localStorage.getItem('token');
   return (
+    
     <>
-      {!hideLayout && <Navbar />}
-      {children}
+      {!hideLayout && (
+        token ? 
+        <Navbar2 onLogout={handleLogout} /> : 
+        <Navbar />
+      )}
+      <main className="min-h-screen">
+        {children}
+      </main>
       {!hideLayout && <Footer />}
     </>
   );
 };
 
+// ==========================================================
+// 3. COMPOSANT PRINCIPAL APP
+// ==========================================================
 function App() {
+  // Initialisation de l'état basée sur la présence d'un token
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
+
+
+
   return (
     <BrowserRouter>
-    <ScrollToTop />
-      <LayoutWrapper>
+      <ScrollToTop />
+      <LayoutWrapper isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated}>
         <Routes>
-           <Route path='/' element={<Accueil />} />
-           <Route path='/equipe' element={< Equipe/>}/>
-           <Route path='/conseil' element={<ActusConseils/>}/>
-           <Route path='/catalogue' element={<Recherche/>}/>
-           <Route path='/contact' element={<Contact />} />
-           <Route path='/inscription' element={<Inscription/>} />
-           <Route path='/connexion2' element={<LoginForm/>}/>
-           <Route path='/connexion' element={<Connexion/>}/>
-           <Route path='/accueil2' element={<ProprietaireHome/>}/>
-           <Route path='/publication' element={< Publication/>}/>
-           <Route path='/profile' element={< ProfilePage /> }/>
-           <Route path='/mes-publications' element={<MyPublications/>}/>
-           <Route path='/Modif'element={<ModifierPublication/>} />
-           <Route path='/detail' element={ <Details />}/>
+          {/* ================= ROUTES PUBLIQUES ================= */}
+          <Route path='/' element={<Accueil />} />
+          <Route path='/equipe' element={<Equipe />} />
+          <Route path='/conseil' element={<ActusConseils />} />
+          <Route path='/catalogue' element={<Recherche />} />
+          <Route path='/contact' element={<Contact />} />
+          <Route path='/inscription' element={<Inscription />} />
+          <Route path='/connexion' element={<Connexion />} />
+          
+          {/* Passage de la fonction de succès au formulaire de connexion */}
+          <Route 
+            path='/connexion2' 
+            element={<LoginForm onLoginSuccess={() => setIsAuthenticated(true)} />} 
+          />
+          
+          <Route path='/detail' element={<Details />} />
+
+          {/* ================= ROUTES PROTÉGÉES ================= */}
+          <Route 
+            path='/admin' 
+            element={<AdminIdentityDashboard />} 
+          />
+          <Route 
+            path='/accueil2' 
+            element={<ProtectedRoute><ProprietaireHome /></ProtectedRoute>} 
+          />
+          <Route 
+            path='/publication' 
+            element={<ProtectedRoute><Publication /></ProtectedRoute>} 
+          />
+          <Route 
+            path='/profile' 
+            element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} 
+          />
+          <Route 
+            path='/mes-publications' 
+            element={<ProtectedRoute><MyPublications /></ProtectedRoute>} 
+          />
+          <Route 
+            path='/Modif' 
+            element={<ProtectedRoute><ModifierPublication /></ProtectedRoute>} 
+          />
+
+          {/* Redirection automatique pour les routes inconnues */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </LayoutWrapper>
     </BrowserRouter>
   )
 }
 
-export default App
+export default App;

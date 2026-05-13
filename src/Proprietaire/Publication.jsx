@@ -6,27 +6,43 @@ import {
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
 import SearchLocation from '../components/Map/SearchLocation';
-
+import { createAnnoce } from '../service/auth_service';
 
 const PublicationAnnonce = () => {
     const [step, setStep] = useState(1);
     const [images, setImages] = useState([]);
-    const [typePublication, setTypePublication] = useState('');
-    const [categorie, setCategorie] = useState('');
     const [isMapExpanded, setIsMapExpanded] = useState(false);
     const [position, setPosition] = useState(null);
     const [mapPosition, setMapPosition] = useState([3.848, 11.502]);
-
-
-    const [ville, setVille] = useState('');
-    const [quartier, setQuartier] = useState('');
-    const [region, setRegion] = useState('');
+    const [documents, setDocuments] = useState([]);
 
     const steps = [
         { id: 1, label: 'Description', icon: <Layout size={20} /> },
         { id: 2, label: 'Complément', icon: <Sparkles size={20} /> },
         { id: 3, label: 'Position', icon: <MapPin size={20} /> },
     ];
+    // Dans ton composant PublicationAnnonce
+    const [formData, setFormData] = useState({
+        titreBien: '',
+        prix: '',
+        superficie: '',
+        nbrePiece: '',
+        description: '',
+        typePublication: '',
+        typebienimmobilier: '',
+        categorie: '',
+        region: '',
+        ville: '',
+        quartier: ''
+    });
+
+
+
+    // Handler générique pour les champs texte et select
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files);
@@ -34,6 +50,14 @@ const PublicationAnnonce = () => {
             preview: URL.createObjectURL(file)
         }));
         setImages([...images, ...newImgs]);
+    };
+
+    const handleDocUpload = (e) => {
+        const files = Array.from(e.target.files);
+        const newDocs = files.map(file => Object.assign(file, {
+            preview: URL.createObjectURL(file)
+        }));
+        setDocuments([...documents, ...newDocs]);
     };
 
     const removeImage = (index) => {
@@ -54,6 +78,46 @@ const PublicationAnnonce = () => {
 
         return () => { document.body.style.overflow = 'unset'; };
     }, [isMapExpanded]);
+
+    const handleSubmit = async () => {
+    try {
+        if (!position) {
+            alert("Veuillez sélectionner une position sur la carte");
+            return;
+        }
+
+        if (!formData.titreBien || !formData.prix) {
+            alert("Veuillez remplir les champs obligatoires");
+            return;
+        }
+
+        const adresse = {
+            region: formData.region,
+            ville: formData.ville,
+            quartier: formData.quartier
+        };
+
+        console.log("FORM DATA :", formData);
+        console.log("POSITION :", position);
+        console.log("IMAGES :", images);
+        console.log("DOCUMENTS :", documents);
+
+        const res = await createAnnoce(
+            formData,
+            images,
+            position,
+            adresse,
+            documents
+        );
+
+        console.log("SUCCESS :", res);
+        alert("Annonce publiée avec succès 🎉");
+
+    } catch (err) {
+        console.error("ERREUR :", err);
+        alert("Erreur lors de la publication");
+    }
+};
 
     return (
         <div className="min-h-screen bg-white flex flex-col w-full font-sans text-gray-900">
@@ -98,27 +162,27 @@ const PublicationAnnonce = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
                         <div className="space-y-2">
                             <label className="text-sm font-semibold flex items-center gap-2"><Type size={16} /> Titre du Bien</label>
-                            <input type="text" placeholder="Studio moderne..." className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-colors" />
+                            <input type="text" name='titreBien' value={formData.titreBien} placeholder="Studio moderne..." onChange={handleInputChange} required className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-colors" />
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold flex items-center gap-2"><DollarSign size={16} /> Prix du loyer (FCFA)</label>
-                            <input type="number" placeholder="150 000" className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
+                            <input type="number" name='prix' value={formData.prix}required placeholder="150 000" onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold flex items-center gap-2"><Clock size={16} /> Superficie (m²)</label>
-                            <input type="number" placeholder="100" className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
+                            <input type="number" name='superficie' value={formData.superficie} required placeholder="100" onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold flex items-center gap-2"><Home size={16} /> Nombre de Pièces</label>
-                            <input type="number" placeholder="5" className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
+                            <input type="number" name='nbrePiece' value={formData.nbrePiece} required placeholder="5" onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
                         </div>
 
                         <div className="space-y-2 md:col-span-2">
                             <label className="text-sm font-semibold flex items-center gap-2"><AlignLeft size={16} /> Description</label>
-                            <textarea rows="4" placeholder="Détails importants..." className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83] resize-none"></textarea>
+                            <textarea rows="4" name='description' value={formData.description} required placeholder="Détails importants..." onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83] resize-none"></textarea>
                         </div>
                     </div>
                 )}
@@ -146,34 +210,79 @@ const PublicationAnnonce = () => {
                                 </label>
                             </div>
                         </div>
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500">Photos des Documents du logement</h3>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                                {documents.map((doc, i) => (
+                                    <div key={i} className="aspect-square rounded-lg overflow-hidden border border-gray-100 relative group">
+                                        <img src={img.preview} className="w-full h-full object-cover" alt="" />
+                                        <button
+                                            onClick={() => removeImage(i)}
+                                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                                <label className="aspect-square border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors group">
+                                    <Plus className="text-gray-400 group-hover:text-[#007b83]" size={24} />
+                                    <input type="file" multiple className="hidden" onChange={handleDocUpload} />
+                                </label>
+                            </div>
+                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold">Type de Publication</label>
                                 <select
-                                    value={typePublication}
-                                    onChange={(e) => setTypePublication(e.target.value)}
+                                    name="typePublication"
+                                    value={formData.typePublication}
+                                    onChange={handleInputChange}
                                     className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] appearance-none cursor-pointer"
+                                    required
                                 >
-                                    <option value="" disabled>Choisir un type</option>
-                                    <option value="louer">À Louer</option>
-                                    <option value="vendre">À Vendre</option>
-                                    <option value="nuitée">Par Nuitée</option>
+                                    <option value="" disabled>-- Choisir une option --</option>
+                                    <option value="VENTE">VENTE</option>
+                                    <option value="LOCATION">LOCATION</option>
+                                    <option value="BAIL">BAIL</option>
                                 </select>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold">Catégorie du Bien</label>
+                                <label className="text-sm font-semibold">Type Bien Immobilier</label>
                                 <select
-                                    value={categorie}
-                                    onChange={(e) => setCategorie(e.target.value)}
+                                    name='typebienimmobilier'
+                                    value={formData.typebienimmobilier}
+                                    onChange={handleInputChange}
                                     className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] appearance-none cursor-pointer"
+                                    required
                                 >
-                                    <option value="" disabled>Choisir une catégorie</option>
-                                    <option value="chambre">Chambre</option>
-                                    <option value="studio">Studio</option>
-                                    <option value="appartement">Appartement</option>
-                                    <option value="maison">Maison</option>
+                                    <option value="" disabled>-- Choisir une option --</option>
+                                    <option value="APPARTEMENT">APPARTEMENT</option>
+                                    <option value="MAISON">MAISON</option>
+                                    <option value="TERRAIN">TERRAIN</option>
+                                    <option value="IMMEUBLE">IMMEUBLE</option>
+                                    <option value="VILLA">VILLA</option>
+                                    <option value="STUDIO">STUDIO</option>
+                                    <option value="BOUTIQUE">BOUTIQUE</option>
+                                    <option value="BUREAU">BUREAU</option>
+                                    <option value="CHAMBRE">CHAMBRE</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold">Categorie du Bien </label>
+                                <select
+                                    name='categorie'
+                                    value={formData.categorie}
+                                    onChange={handleInputChange}
+                                    className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] appearance-none cursor-pointer"
+                                    required
+                                >
+                                    <option value="" disabled>-- Choisir une option --</option>
+                                    <option value="MEUBLE">MEUBLE</option>
+                                    <option value="NON_MEUBLE">NON_MEUBLE</option>
+
                                 </select>
                             </div>
                         </div>
@@ -190,13 +299,25 @@ const PublicationAnnonce = () => {
                                 <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide">
                                     <Navigation size={16} /> Region
                                 </label>
-                                <input
-                                    type="text"
-                                    value={region}
-                                    onChange={(e) => setVille(e.target.value)}
-                                    placeholder="Ex: Centre, Littoral..."
-                                    className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-all shadow-sm"
-                                />
+                                <select
+                                    name='region'
+                                    value={formData.region}
+                                    onChange={handleInputChange}
+                                    className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] appearance-none cursor-pointer"
+                                    required
+                                >
+                                    <option value="" disabled>-- Choisir une option --</option>
+                                    <option value="ADAMAOUA">ADAMAOUA</option>
+                                    <option value="CENTRE">CENTRE</option>
+                                    <option value="EST">EST</option>
+                                    <option value="EXTREME_NORD">EXTRÊME-NORD</option>
+                                    <option value="LITTORAL">LITTORAL</option>
+                                    <option value="NORD">NORD</option>
+                                    <option value="NORD_OUEST">NORD-OUEST</option>
+                                    <option value="OUEST">OUEST</option>
+                                    <option value="SUD">SUD</option>
+                                    <option value="SUD_OUEST">SUD-OUEST</option>
+                                </select>
                             </div>
 
                             <div className="space-y-2">
@@ -205,8 +326,9 @@ const PublicationAnnonce = () => {
                                 </label>
                                 <input
                                     type="text"
-                                    value={ville}
-                                    onChange={(e) => setVille(e.target.value)}
+                                    name='ville'
+                                    value={formData.ville}
+                                    onChange={handleInputChange}
                                     placeholder="Ex: Yaoundé, Douala..."
                                     className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-all shadow-sm"
                                 />
@@ -218,8 +340,9 @@ const PublicationAnnonce = () => {
                                 </label>
                                 <input
                                     type="text"
-                                    value={quartier}
-                                    onChange={(e) => setQuartier(e.target.value)}
+                                    name='quartier'
+                                    value={formData.quartier}
+                                    onChange={handleInputChange}
                                     placeholder="Ex: Bastos, Bonapriso..."
                                     className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-all shadow-sm"
                                 />
@@ -264,8 +387,8 @@ const PublicationAnnonce = () => {
                                 {/* Badge de Coordonnées (Temps Réel) */}
                                 {position && (
                                     <div className={`absolute z-[100001] bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-white transition-all ${isMapExpanded
-                                            ? 'bottom-10 right-10' // Positionné en bas à droite en plein écran
-                                            : 'bottom-6 left-6'    // Positionné en bas à gauche en mode réduit
+                                        ? 'bottom-10 right-10'
+                                        : 'bottom-6 left-6'
                                         }`}>
                                         <p className="text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Coordonnées</p>
                                         <code className="text-xs font-bold text-[#007b83] font-mono">
@@ -296,7 +419,12 @@ const PublicationAnnonce = () => {
                     ) : <div />}
 
                     <button
-                        onClick={() => step < 3 ? setStep(step + 1) : alert("Publication en cours...")}
+                        onClick={() =>{ if (step < 3) {
+                            setStep(step + 1); 
+                            } else{ 
+                                handleSubmit();
+                            }
+                        }}
                         className="px-8 py-3 bg-[#007b83] text-white rounded-lg font-bold shadow-sm hover:bg-[#00666d] transition-all flex items-center gap-2"
                     >
                         {step === 3 ? (
