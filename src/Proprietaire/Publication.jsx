@@ -15,6 +15,7 @@ const PublicationAnnonce = () => {
     const [position, setPosition] = useState(null);
     const [mapPosition, setMapPosition] = useState([3.848, 11.502]);
     const [documents, setDocuments] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const steps = [
         { id: 1, label: 'Description', icon: <Layout size={20} /> },
@@ -90,7 +91,7 @@ const PublicationAnnonce = () => {
             alert("Veuillez remplir les champs obligatoires");
             return;
         }
-
+        setLoading(true)
         const adresse = {
             region: formData.region,
             ville: formData.ville,
@@ -116,6 +117,8 @@ const PublicationAnnonce = () => {
     } catch (err) {
         console.error("ERREUR :", err);
         alert("Erreur lors de la publication");
+    } finally{
+        setLoading(false)
     }
 };
 
@@ -419,6 +422,7 @@ const PublicationAnnonce = () => {
                     ) : <div />}
 
                     <button
+                        disabled={loading}
                         onClick={() =>{ if (step < 3) {
                             setStep(step + 1); 
                             } else{ 

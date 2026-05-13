@@ -2,6 +2,8 @@ import axios from "axios";
 
 const API_URL = "/api";
 
+// connexion service Aut
+
 export const login = async (email, password) => {
     try {
         const response = await axios.post(`${API_URL}/AUTHENTIFICATION/login/`, {
@@ -46,6 +48,11 @@ export const login = async (email, password) => {
     }
 };
 
+
+
+// service publication
+
+
 export const createAnnoce = async (data, images, position, adresse, documents) => {
     try {
         const formData = new FormData();
@@ -88,6 +95,25 @@ export const createAnnoce = async (data, images, position, adresse, documents) =
     }
 
 };
+
+export const MyPublications = async () =>{
+    try {
+        const response = await axios.get(`${API_URL}/PUBLICATION-SERVICE/api/biens/mes-publications`);
+        return response.data;
+
+    } catch(error){
+        console.error("Erreur lors de la recuperation des biens:", error);
+        throw error.response?.data || new Error("Impossible de charger vos publications")
+
+    }
+};
+
+export const deletePublication = async (id) => {
+    await axios.delete(`${API_URL}/PUBLICATION/api/biens/${id}`);
+}
+
+//user service  
+
 
 export const registerUser = async (userData) => {
     try {
