@@ -61,8 +61,10 @@ export const createAnnoce = async (data, images, position, adresse, documents) =
             superfie: parseFloat(data.superficie),
             nbrePiece: parseInt(data.nbrePiece),
             description: data.description,
+            typebienimmobilier: data.typebienimmobilier,
             categorie: data.categorie,
             prix: parseFloat(data.prix),
+            numeroPaiement: parseInt(data.numeroPaiement),
             typePublication: data.typePublication,
             adresse: {
                 region: adresse.region,
@@ -81,11 +83,11 @@ export const createAnnoce = async (data, images, position, adresse, documents) =
         });
         if (documents && documents.length > 0) {
             documents.forEach((doc) => {
-                formDataToSend.append("documents", doc);
+                formData.append("documents", doc);
             });
 
         }
-        const response = await axios.post(`${API_URL}/PUBLICATION/api/biens`, formData);
+        const response = await axios.post(`${API_URL}/PUBLICATION-SERVICE/api/biens`, formData);
 
         return response.data;
     }
@@ -96,7 +98,7 @@ export const createAnnoce = async (data, images, position, adresse, documents) =
 
 };
 
-export const MyPublications = async () =>{
+export const Mes_Publications = async () =>{
     try {
         const response = await axios.get(`${API_URL}/PUBLICATION-SERVICE/api/biens/mes-publications`);
         return response.data;
@@ -109,9 +111,110 @@ export const MyPublications = async () =>{
 };
 
 export const deletePublication = async (id) => {
-    await axios.delete(`${API_URL}/PUBLICATION/api/biens/${id}`);
+    await axios.delete(`${API_URL}/PUBLICATION-SERVICE/api/biens/${id}`);
 }
 
+
+export const updateAnnonce = async (id, formData, position) => {
+  const data = new FormData();
+
+  // 1. Le DTO (Données textuelles)
+  const bienDTO = {
+    titreBien: formData.titre,
+    superfie: parseFloat(formData.superficie) || 0,
+    nbrePiece: parseInt(formData.pieces) || 0,
+    description: formData.description,
+    prix: parseFloat(formData.prix) || 0,
+    typePublication: formData.typePublication,
+    typebienimmobilier: formData.typebienimmobilier,
+    categorie: formData.categorie,
+    adresse: {
+      region: formData.region,
+      ville: formData.ville,
+      quartier: formData.quartier,
+      lattitude: position.lat,
+      longitude: position.lng
+    }
+  };
+
+  // Ajout du JSON
+  data.append('bien', new Blob([JSON.stringify(bienDTO)], { type: 'application/json' }));
+
+  // 2. Ajout des nouvelles IMAGES uniquement
+  if (formData.images) {
+    formData.images.forEach((img) => {
+      if (img instanceof File) {
+        data.append('images', img);
+      }
+    });
+  }
+
+  // 3. Ajout des nouveaux DOCUMENTS uniquement
+  // On suppose que tu as un champ 'documents' dans ton état formData
+  if (formData.documents) {
+    formData.documents.forEach((doc) => {
+      if (doc instanceof File) {
+        data.append('documents', doc); // Le nom 'documents' doit correspondre au @RequestPart du backend
+      }
+    });
+  }
+
+  const response = await axios.put(`${API_URL}/PUBLICATION-SERVICE/api/biens/${id}`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+
+  return response.data;
+};
+
+
+export const getPublicationById = async (id) => {
+  try {
+    const response = await axios.get(`${API_URL}/PUBLICATION-SERVICE/api/biens/${id}`);
+    
+    // Si ton backend renvoie directement l'objet, on le retourne
+    return response.data;
+  } catch (error) {
+    console.error("Erreur lors de la récupération du bien :", error);
+    throw error;
+  }
+};
+
+
+export const BienService = {
+  // Récupérer toutes les offres
+  getAll: async () => {
+    const response = await fetch(`${API_URL}/PUBLICATION-SERVICE/api/biens`);
+    if (!response.ok) throw new Error('Erreur lors du chargement');
+    return await response.json();
+  },
+
+  // Recherche dynamique par critères
+  search: async (filters) => {
+    let url = `${API_URL}/PUBLICATION-SERVICE/api/biens`;
+    
+    // Construction de l'URL selon les filtres présents
+    if (filters.ville && filters.prixMax) {
+      url += `/search/ville-prix?ville=${filters.ville}&prix=${filters.prixMax}`;
+    } else if (filters.categorie) {
+      url += `/search/categorie?categorie=${filters.categorie}`;
+    } else if (filters.ville) {
+      url += `/search/ville?ville=${filters.ville}`;
+    } else if (filters.prixMax) {
+      url += `/search/prix-max?prix=${filters.prixMax}`;
+    } else if (filters.quartier) {
+      url += `/search/quartier?quartier=${filters.quartier}`;
+    }
+    
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Erreur de recherche');
+    return await response.json();
+  },
+
+  // Helper pour l'URL des images
+  formatImageUrl: (imageName) => {
+    return `${API_URL}/PUBLICATION-SERVICE/upload/${imageName}`;
+  }
+};
 //user service  
 
 

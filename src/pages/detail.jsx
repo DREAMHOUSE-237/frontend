@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import {
   MapPin, DollarSign, Key, Calendar, Users,
   MessageSquare, Send, User,
@@ -6,186 +7,202 @@ import {
   ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
+import { getPublicationById } from '../service/auth_service'; 
+import { BienService } from '../service/auth_service'; 
 
 const Details = () => {
+  const { id } = useParams();
+  const [bien, setBien] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState("");
   const [isMapMaximized, setIsMapMaximized] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
-
-  // Coordonnées fictives (à remplacer par les data de ton API)
-  const bienCoords = { lat: 3.8955, lng: 11.5110 };
-
-  const images = [
-    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070",
-    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1980",
-    "https://images.unsplash.com/photo-1484154218962-a197022b5858?q=80&w=2074",
-    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?q=80&w=2070"
-  ];
+  const [coords, setCoords] = useState(null); // Initialisé à null pour forcer la donnée backend
 
   const commentsList = [
     { id: 1, user: "Kieran Junior", text: "L'appartement est-il disponible immédiatement ?", date: "Hier" },
     { id: 2, user: "Alice Mbarga", text: "La caution est-elle négociable ?", date: "Il y a 2 jours" },
-    { id: 3, user: "Marc Etoundi", text: "Superbe vue sur le Golf, je recommande.", date: "Il y a 5 jours" },
-    { id: 4, user: "Samuel", text: "Le forage fonctionne-t-il avec un suppresseur ?", date: "Lundi" },
-    { id: 5, user: "Samuel", text: "Le forage fonctionne-t-il avec un suppresseur ?", date: "Lundi" }
+    { id: 3, user: "Marc Etoundi", text: "Superbe vue sur le Golf, je recommande.", date: "Il y a 5 jours" }
   ];
 
+  useEffect(() => {
+    const fetchBien = async () => {
+      try {
+        setLoading(true);
+        const data = await getPublicationById(id);
+        
+        // Récupération dynamique stricte depuis le backend (clés : lattitude, longitude)
+        if (data.lattitude && data.longitude) {
+          setCoords({
+            lat: parseFloat(data.lattitude),
+            lng: parseFloat(data.longitude)
+          });
+        }
+        
+        setBien(data);
+      } catch (error) {
+        console.error("Erreur lors de la récupération du bien:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBien();
+  }, [id]);
+
   const nextImage = useCallback(() => {
-    setActiveImg((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  }, [images.length]);
+    if (!bien?.images || bien.images.length === 0) return;
+    setActiveImg((prev) => (prev === bien.images.length - 1 ? 0 : prev + 1));
+  }, [bien]);
 
   const prevImage = useCallback(() => {
-    setActiveImg((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  }, [images.length]);
+    if (!bien?.images || bien.images.length === 0) return;
+    setActiveImg((prev) => (prev === 0 ? bien.images.length - 1 : prev - 1));
+  }, [bien]);
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (!showLightbox) return;
-      if (e.key === 'Escape') setShowLightbox(false);
-      if (e.key === 'ArrowRight') nextImage();
-      if (e.key === 'ArrowLeft') prevImage();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showLightbox, nextImage, prevImage]);
+  if (loading) return <div className="h-screen flex items-center justify-center italic text-gray-400">Chargement des détails...</div>;
+  if (!bien) return <div className="h-screen flex items-center justify-center">Bien introuvable.</div>;
+
+  const images = bien.images && bien.images.length > 0 ? bien.images : [null];
 
   return (
-    <div className="max-w-screen-2xl mx-auto p-4 md:p-10 font-sans text-gray-800 bg-white">
+    <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor: '#f8f6f2' }}>
+      <div className="max-w-screen-2xl mx-auto p-4 md:p-10 font-sans text-gray-800">
+        
+        {showLightbox && (
+          <div className="fixed inset-0 z-[100000] bg-black/95 flex items-center justify-center p-4">
+            <button onClick={() => setShowLightbox(false)} className="absolute top-6 right-6 text-white/70 hover:text-white"><X size={40} /></button>
+            <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronLeft size={32} /></button>
+            <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronRight size={32} /></button>
+            <img src={BienService.formatImageUrl(images[activeImg])} className="max-h-[90vh] max-w-[90vw] object-contain" alt="" />
+          </div>
+        )}
 
-      {showLightbox && (
-        <div className="fixed inset-0 z-[100000] bg-black/95 flex items-center justify-center p-4 select-none">
-          <button onClick={() => setShowLightbox(false)} className="absolute top-6 right-6 text-white/70 hover:text-white z-10"><X size={40} /></button>
-          <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronLeft size={32} /></button>
-          <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronRight size={32} /></button>
-          <img src={images[activeImg]} className="max-h-[90vh] max-w-[90vw] rounded shadow-2xl object-contain animate-in fade-in zoom-in-95 duration-300" alt="" />
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-
-        <div className="lg:col-span-8 space-y-10">
-          <div className="space-y-4">
-            <div className="relative group overflow-hidden rounded-xl bg-gray-100 aspect-[16/9]">
-              <img src={images[activeImg]} className="w-full h-full object-cover" alt="Principal" />
-              <div className="absolute inset-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <button onClick={prevImage} className="p-3 bg-white/80 rounded-full shadow hover:bg-white"><ChevronLeft size={24} /></button>
-                <button onClick={nextImage} className="p-3 bg-white/80 rounded-full shadow hover:bg-white"><ChevronRight size={24} /></button>
-              </div>
-              <button onClick={() => setShowLightbox(true)} className="absolute bottom-6 right-6 bg-black/50 text-white p-3 rounded hover:bg-black transition-colors"><Maximize2 size={22} /></button>
-            </div>
-
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-              {images.map((img, i) => (
-                <img
-                  key={i} src={img}
-                  onClick={() => setActiveImg(i)}
-                  className={`w-32 h-20 object-cover rounded cursor-pointer border-2 transition-all ${activeImg === i ? 'border-[#007b83] scale-105 shadow-md' : 'border-transparent opacity-70 hover:opacity-100'}`}
-                  alt={`miniature ${i + 1}`}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+          <div className="lg:col-span-8 space-y-10">
+            
+            {/* Galerie */}
+            <div className="space-y-4">
+              <div className="relative group overflow-hidden rounded-xl bg-gray-200 aspect-[16/9] shadow-sm">
+                <img 
+                  src={BienService.formatImageUrl(images[activeImg])} 
+                  className="w-full h-full object-cover transition-all duration-700" 
+                  alt={bien.titreBien} 
                 />
-              ))}
+                <div className="absolute inset-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={prevImage} className="p-3 bg-white/80 rounded-full shadow"><ChevronLeft size={24} /></button>
+                  <button onClick={nextImage} className="p-3 bg-white/80 rounded-full shadow"><ChevronRight size={24} /></button>
+                </div>
+                <button onClick={() => setShowLightbox(true)} className="absolute bottom-6 right-6 bg-black/50 text-white p-3 rounded"><Maximize2 size={22} /></button>
+              </div>
+
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                {images.map((img, i) => (
+                  <img
+                    key={i} 
+                    src={BienService.formatImageUrl(img)}
+                    onClick={() => setActiveImg(i)}
+                    className={`w-32 h-20 shrink-0 object-cover rounded-lg cursor-pointer border-2 transition-all ${activeImg === i ? 'border-[#007b83] scale-105 shadow-md' : 'border-transparent opacity-60'}`}
+                    alt={`Vue ${i}`}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="border-b border-gray-100 pb-8 space-y-3">
-            <h1 className="text-4xl font-light text-gray-700 italic">Appartement meublé .</h1>
-            <div className="flex items-center text-[#007b83] mt-2 italic">
-              <MapPin size={18} className="mr-2" />
-              <span className="text-sm">Bastos, Yaoundé I, Yaoundé, Mfoundi, Région du Centre, Cameroun</span>
+           {/* Titre et Localisation */}
+            <div className="border-b border-gray-200 pb-8 space-y-3">
+              <h1 className="text-4xl font-light text-gray-700 italic">{bien.titreBien || "Sans titre"}</h1>
+              <div className="flex items-center text-[#007b83] mt-2 italic">
+                <MapPin size={18} className="mr-2" />
+                <span className="text-sm">{bien.ville}, {bien.quartier} - Cameroun</span>
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 gap-2 bg-gray-50/50 p-6 rounded-xl">
-            <InfoLine icon={<DollarSign size={18} />} label="Prix du Loyer" value="2,300,000 FCFA" />
-            <InfoLine icon={<Key size={18} />} label="Type de Publication" value="Location" />
-            <InfoLine icon={<Calendar size={18} />} label="Superficie" value="300 m²" />
-            <InfoLine icon={<Users size={18} />} label="Nombre de Pieces" value="5" />
-          </div>
+            {/* Caractéristiques */}
+            <div className="grid grid-cols-1 gap-2 bg-white/60 p-6 rounded-xl border border-white/40 shadow-sm">
+              <InfoLine icon={<DollarSign size={18} />} label="Prix" value={`${bien.prix?.toLocaleString()} FCFA`} />
+              <InfoLine icon={<Key size={18} />} label="Type" value={bien.typePublication} />
+              <InfoLine icon={<Calendar size={18} />} label="Catégorie" value={bien.categorie} />
+              <InfoLine icon={<Users size={18} />} label="Pièces" value={bien.nbrePiece} />
+            </div>
 
-          <div className="pt-8 space-y-6">
-            <h3 className="text-center text-gray-400 text-sm uppercase tracking-[0.3em] italic">Description du Bien </h3>
-            <div className="text-base text-gray-600 leading-relaxed max-w-3xl mx-auto text-center italic space-y-2">
-              <p className="font-bold uppercase tracking-tight text-lg text-gray-800">Appartement ultra haut standing golf a louer meublé</p>
-              <p className="text-[#007b83] font-bold text-lg">*LIEU* : Yaounde - CENTRE-VILLE - GOLF</p>
-              <div className="mt-4 space-y-2">
-                <p>✅ 02 chambres avec placards climatisé</p>
-                <p>✅ 03 douches avec eau chaude</p>
-                <p>✅ tres vaste cuisine avec rangement balcon</p>
-                <p>✅ Salon lumineux</p>
+            {/* Description dynamique */}
+            <div className="pt-8 space-y-6">
+              <h3 className="text-center text-gray-400 text-sm uppercase tracking-[0.3em] italic font-bold">Description du Bien</h3>
+              <div className="text-base text-gray-600 leading-relaxed max-w-3xl mx-auto text-center italic">
+                <p className="whitespace-pre-line bg-white/40 p-6 rounded-2xl border border-white/20">
+                  {bien.description || "Aucune description disponible."}
+                </p>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="lg:col-span-4 space-y-12">
+          <div className="lg:col-span-4 space-y-12">
+            
+            {/* Carte 100% Dynamique */}
+            <div className={isMapMaximized ? 'fixed inset-0 z-[100000] bg-white' : 'relative h-80 z-10'}>
+              <div className={`relative h-full w-full ${isMapMaximized ? '' : 'rounded-3xl shadow-xl overflow-hidden border-4 border-white'}`}>
+                <button
+                  onClick={() => setIsMapMaximized(!isMapMaximized)}
+                  className="absolute top-4 right-4 z-[100001] bg-white p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
+                >
+                  {isMapMaximized ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+                </button>
+                {coords && (
+                  <LocationPicker
+                    mapPosition={coords}
+                    readOnly={true}
+                  />
+                )}
+              </div>
+            </div>
 
-          {/* SECTION CARTE */}
-          <div className={isMapMaximized
-            ? 'fixed top-0 left-0 w-screen h-screen z-[100000] bg-white'
-            : 'relative h-96 transition-all duration-500 z-10'
-          }>
-            <div className={`relative h-full w-full ${isMapMaximized ? 'rounded-none' : 'rounded-2xl shadow-xl border border-gray-100 overflow-hidden'}`}>
-
-              {/* Bouton pour quitter le plein écran - Placé au-dessus de la carte */}
-              <button
-                onClick={() => setIsMapMaximized(!isMapMaximized)}
-                className="absolute top-6 right-6 z-[100001] bg-white p-3 rounded-full shadow-2xl text-gray-700 hover:scale-110 active:scale-95 transition-all border border-gray-100"
+            {/* Contact */}
+            <div className="border border-white bg-white/80 rounded-3xl p-8 text-center space-y-6 shadow-md">
+              <div className="w-20 h-20 bg-gray-100 rounded-full mx-auto flex items-center justify-center border border-white shadow-inner">
+                <User size={40} className="text-[#007b83]" />
+              </div>
+              <div>
+                <h3 className="font-bold text-xl italic uppercase tracking-tighter text-gray-900">Service Client</h3>
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Réponse rapide</p>
+              </div>
+              <a
+                href={`https://wa.me/${bien.numeroPaiement?.replace(/\s+/g, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full bg-[#007b83] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-[#00666d] transition-all shadow-lg uppercase text-sm"
               >
-                {isMapMaximized ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
-              </button>
-
-              {/* Ton composant Leaflet */}
-              <LocationPicker
-                mapPosition={bienCoords}
-                isExpanded={isMapMaximized}
-                readOnly={true}
-              />
+                <MessageSquare size={20} /> WhatsApp : {bien.numeroPaiement}
+              </a>
             </div>
-          </div>
 
-          <div className="border border-gray-100 rounded-2xl p-10 text-center space-y-6 shadow-sm bg-white">
-            <div className="w-24 h-24 bg-gray-100 rounded-full mx-auto flex items-center justify-center border border-gray-50">
-              <User size={48} className="text-gray-300" />
-            </div>
-            <div>
-              <h3 className="font-bold text-2xl italic uppercase tracking-tighter text-gray-900">OBAM Sylvia</h3>
-              <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.2em]">Agent Immobilier</p>
-            </div>
-            <a
-              href="https://wa.me/237694907134"
-              target="_blank"
-              rel="noreferrer"
-              className="w-full bg-[#007b83] text-white py-5 rounded-lg font-bold text-base flex items-center justify-center gap-3 hover:bg-[#00666d] transition-all shadow-lg uppercase"
-            >
-              <MessageSquare size={22} /> Contact WhatsApp
-            </a>
-          </div>
-
-          <div className="space-y-6">
-            <h3 className="font-bold text-sm uppercase text-gray-400 tracking-[0.2em] italic border-b pb-4">Commentaires</h3>
-            <div className="max-h-80 overflow-y-auto pr-3 space-y-6 scrollbar-thin scrollbar-thumb-gray-200">
-              {commentsList.map(c => (
-                <div key={c.id} className="text-xs border-b border-gray-50 pb-4 italic last:border-0">
-                  <div className="flex justify-between font-bold text-gray-700 mb-2">
-                    <span className="text-sm">{c.user}</span>
-                    <span className="font-normal text-gray-300">{c.date}</span>
+            {/* Section Commentaires */}
+             <div className="space-y-6">
+              <h3 className="font-bold text-xs uppercase text-gray-400 tracking-[0.2em] italic border-b border-gray-200 pb-4">Discussions récents</h3>
+              <div className="max-h-80 overflow-y-auto pr-3 space-y-6 scrollbar-thin">
+                {commentsList.map(c => (
+                  <div key={c.id} className="text-xs border-b border-white pb-4 italic last:border-0">
+                    <div className="flex justify-between font-bold text-gray-700 mb-2">
+                      <span className="text-sm">{c.user}</span>
+                      <span className="font-normal text-gray-300">{c.date}</span>
+                    </div>
+                    <p className="text-gray-500 leading-relaxed text-sm">"{c.text}"</p>
                   </div>
-                  <p className="text-gray-500 leading-relaxed text-sm">"{c.text}"</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <div className="pt-4 space-y-4">
-              <textarea
-                className="w-full border border-gray-100 p-4 text-sm rounded-xl outline-none focus:border-[#007b83] transition bg-gray-50 italic"
-                placeholder="Posez votre question à Sylvia..."
-                rows="4"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-              />
-              <button className="w-full bg-gray-800 text-white py-4 rounded-lg text-sm font-bold uppercase tracking-widest hover:bg-black transition-all shadow-md">
-                <Send size={16} className="inline mr-2" /> Envoyer le message
-              </button>
+              <div className="pt-4 space-y-4">
+                <textarea
+                  className="w-full border border-white p-4 text-sm rounded-xl outline-none focus:border-[#007b83] transition bg-white/60 italic"
+                  placeholder="Écrire un commentaire..."
+                  rows="4"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                />
+                <button className="w-full bg-gray-800 text-white py-4 rounded-lg text-sm font-bold uppercase tracking-widest hover:bg-black transition-all">
+                  <Send size={16} className="inline mr-2" /> Envoyer
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -195,12 +212,12 @@ const Details = () => {
 };
 
 const InfoLine = ({ icon, label, value }) => (
-  <div className="flex items-center justify-between py-3 px-4 hover:bg-white hover:shadow-sm transition group rounded-lg">
-    <div className="flex items-center gap-5 text-gray-400">
-      <span className="w-6 text-[#007b83]">{icon}</span>
+  <div className="flex items-center justify-between py-3 px-4 hover:bg-white/40 rounded-lg transition-colors">
+    <div className="flex items-center gap-4 text-gray-400">
+      <span className="text-[#007b83]">{icon}</span>
       <span className="text-sm font-light italic">{label}</span>
     </div>
-    <span className="text-sm font-semibold text-gray-700 italic tracking-tight">{value}</span>
+    <span className="text-sm font-semibold text-gray-700 italic">{value}</span>
   </div>
 );
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     ChevronLeft, ChevronRight, MapPin, Layout,
     Sparkles, Type, AlignLeft, DollarSign, Clock, Check,
-    Camera, Plus, Home, X, Navigation, Search, Maximize2, Minimize2
+    Camera, Plus, Home, X,Smartphone , Navigation, Search, Maximize2, Minimize2
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
 import SearchLocation from '../components/Map/SearchLocation';
@@ -30,6 +30,7 @@ const PublicationAnnonce = () => {
         nbrePiece: '',
         description: '',
         typePublication: '',
+        numeroPaiement: '',
         typebienimmobilier: '',
         categorie: '',
         region: '',
@@ -81,46 +82,46 @@ const PublicationAnnonce = () => {
     }, [isMapExpanded]);
 
     const handleSubmit = async () => {
-    try {
-        if (!position) {
-            alert("Veuillez sélectionner une position sur la carte");
-            return;
+        try {
+            if (!position) {
+                alert("Veuillez sélectionner une position sur la carte");
+                return;
+            }
+
+            if (!formData.titreBien || !formData.prix) {
+                alert("Veuillez remplir les champs obligatoires");
+                return;
+            }
+            setLoading(true)
+            const adresse = {
+                region: formData.region,
+                ville: formData.ville,
+                quartier: formData.quartier
+            };
+
+            console.log("FORM DATA :", formData);
+            console.log("POSITION :", position);
+            console.log("IMAGES :", images);
+            console.log("DOCUMENTS :", documents);
+
+            const res = await createAnnoce(
+                formData,
+                images,
+                position,
+                adresse,
+                documents
+            );
+
+            console.log("SUCCESS :", res);
+            alert("Annonce publiée avec succès 🎉");
+
+        } catch (err) {
+            console.error("ERREUR :", err);
+            alert("Erreur lors de la publication");
+        } finally {
+            setLoading(false)
         }
-
-        if (!formData.titreBien || !formData.prix) {
-            alert("Veuillez remplir les champs obligatoires");
-            return;
-        }
-        setLoading(true)
-        const adresse = {
-            region: formData.region,
-            ville: formData.ville,
-            quartier: formData.quartier
-        };
-
-        console.log("FORM DATA :", formData);
-        console.log("POSITION :", position);
-        console.log("IMAGES :", images);
-        console.log("DOCUMENTS :", documents);
-
-        const res = await createAnnoce(
-            formData,
-            images,
-            position,
-            adresse,
-            documents
-        );
-
-        console.log("SUCCESS :", res);
-        alert("Annonce publiée avec succès 🎉");
-
-    } catch (err) {
-        console.error("ERREUR :", err);
-        alert("Erreur lors de la publication");
-    } finally{
-        setLoading(false)
-    }
-};
+    };
 
     return (
         <div className="min-h-screen bg-white flex flex-col w-full font-sans text-gray-900">
@@ -170,7 +171,7 @@ const PublicationAnnonce = () => {
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold flex items-center gap-2"><DollarSign size={16} /> Prix du loyer (FCFA)</label>
-                            <input type="number" name='prix' value={formData.prix}required placeholder="150 000" onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
+                            <input type="number" name='prix' value={formData.prix} required placeholder="150 000" onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
                         </div>
 
                         <div className="space-y-2">
@@ -216,7 +217,7 @@ const PublicationAnnonce = () => {
                         <div className="space-y-4">
                             <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500">Photos des Documents du logement</h3>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                                {documents.map((doc, i) => (
+                                {documents.map((img, i) => (
                                     <div key={i} className="aspect-square rounded-lg overflow-hidden border border-gray-100 relative group">
                                         <img src={img.preview} className="w-full h-full object-cover" alt="" />
                                         <button
@@ -288,6 +289,27 @@ const PublicationAnnonce = () => {
 
                                 </select>
                             </div>
+
+                            <div className="mb-5 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Numéro de paiement (Mobile Money/Orange Money) <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative flex items-center">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 font-semibold text-sm">+237</span>
+                                    <Smartphone className="absolute left-16 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <input
+                                        type='number'
+                                        name='numeroPaiement'
+                                        value={formData.numeroPaiement}
+                                        onChange={handleInputChange}
+                                        className="w-full pl-24 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                        placeholder="6XXXXXXXX (obligatoire)"
+                                        required
+                                        maxLength={9}
+                                    />
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 )}
@@ -310,16 +332,17 @@ const PublicationAnnonce = () => {
                                     required
                                 >
                                     <option value="" disabled>-- Choisir une option --</option>
-                                    <option value="ADAMAOUA">ADAMAOUA</option>
-                                    <option value="CENTRE">CENTRE</option>
-                                    <option value="EST">EST</option>
-                                    <option value="EXTREME_NORD">EXTRÊME-NORD</option>
-                                    <option value="LITTORAL">LITTORAL</option>
-                                    <option value="NORD">NORD</option>
-                                    <option value="NORD_OUEST">NORD-OUEST</option>
-                                    <option value="OUEST">OUEST</option>
-                                    <option value="SUD">SUD</option>
-                                    <option value="SUD_OUEST">SUD-OUEST</option>
+                                    {/* Valeurs corrigées selon votre message d'erreur backend */}
+                                    <option value="Adamaoua_ExtremeNord">ADAMAOUA</option>
+                                    <option value="YAOUNDE_Centre">CENTRE</option>
+                                    <option value="Bertoua_Est">EST</option>
+                                    <option value="Maroua_Ngaoundere">EXTRÊME-NORD</option>
+                                    <option value="Douala_Littoral">LITTORAL</option>
+                                    <option value="Garoua_Nord">NORD</option>
+                                    <option value="Bamenda_NordOuest">NORD-OUEST</option>
+                                    <option value="Bafoussam_Ouest">OUEST</option>
+                                    <option value="Ebolowa_Sud">SUD</option>
+                                    <option value="Buea_SudOuest">SUD-OUEST</option>
                                 </select>
                             </div>
 
@@ -423,9 +446,10 @@ const PublicationAnnonce = () => {
 
                     <button
                         disabled={loading}
-                        onClick={() =>{ if (step < 3) {
-                            setStep(step + 1); 
-                            } else{ 
+                        onClick={() => {
+                            if (step < 3) {
+                                setStep(step + 1);
+                            } else {
                                 handleSubmit();
                             }
                         }}

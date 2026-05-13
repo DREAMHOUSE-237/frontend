@@ -97,7 +97,7 @@ function App() {
             element={<LoginForm onLoginSuccess={() => setIsAuthenticated(true)} />} 
           />
           
-          <Route path='/detail' element={<Details />} />
+          <Route path='/detail/:id' element={<Details />} />
 
           {/* ================= ROUTES PROTÉGÉES ================= */}
           <Route 
@@ -121,7 +121,7 @@ function App() {
             element={<ProtectedRoute><MyPublications /></ProtectedRoute>} 
           />
           <Route 
-            path='/Modif' 
+            path='/modif/:id' 
             element={<ProtectedRoute><ModifierPublication /></ProtectedRoute>} 
           />
 

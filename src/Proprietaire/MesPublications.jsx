@@ -7,8 +7,8 @@ import {
   Trash2,
   Edit3,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { MyPublications, deletePublication } from '../service/auth_service';
+import { useNavigate , Link} from 'react-router-dom';
+import { Mes_Publications, deletePublication } from '../service/auth_service';
 
 const MyPublications = () => {
   const [publications, SetPublications] = useState([]);
@@ -19,11 +19,12 @@ const MyPublications = () => {
     fetchData();
   }, []);
 
+  const API_URL = "/api";
   const fetchData = async () => {
 
     try {
       setLoading(true);
-      const data = await MyPublications();
+      const data = await Mes_Publications();
       SetPublications(data);
     } catch (err) {
       SetError("Erreur de chargement des donnees.")
@@ -52,6 +53,8 @@ const MyPublications = () => {
     );
   }
 
+
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
       <div className="max-w-4xl mx-auto">
@@ -79,7 +82,7 @@ const MyPublications = () => {
               {/* Image de l'annonce */}
               <div className="relative w-full sm:w-48 h-48 sm:h-auto overflow-hidden">
                 <img
-                  src={pub.images && pub.images.length > 0 ? `${API_URL}/files/${pub.images[0]}` : "api/placeholder/400/320"}
+                  src={pub.images && pub.images.length > 0 ? `${API_URL}/PUBLICATION-SERVICE/uploads/${pub.images[0]}` : "api/placeholder/400/320"}
                   alt={pub.titreBien}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
@@ -92,21 +95,21 @@ const MyPublications = () => {
                     <h3 className="text-lg font-bold text-gray-800 mb-1">{pub.titreBien}</h3>
                     <div className="flex items-center gap-4 text-gray-500 text-sm">
                       <span className="flex items-center gap-1">
-                        <MapPin size={14} className="text-[#007b83]" /> {pub.adresse?.quartier}, {pub.adresse?.ville}
+                        <MapPin size={14} className="text-[#007b83]" /> {pub.quartier}, {pub.ville}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Home size={14} className="text-[#ff8800]" /> {pub.typeBienImmobilier}
+                        <Home size={14} className="text-[#ff8800]" /> {pub.typebienimmobilier}
                       </span>
                     </div>
                   </div>
 
                   {/* Menu d'actions (Trois points) */}
                   <div className="flex gap-2">
-                    <a href="/Modif">
+                    <Link to={`/modif/${pub.id}`}>
                       <button className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-blue-600 transition-colors">
                         <Edit3 size={18} />
                       </button>
-                    </a>
+                    </Link>
 
                     <button
                       onClick={() => handleDelete(pub.id)}

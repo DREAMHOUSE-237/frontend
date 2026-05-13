@@ -33,14 +33,13 @@ function ChangeView({ center }) {
   return null; 
 } 
 
-// AJOUT DE LA PROP fixedPosition ET readOnly
-export default function LocationPicker({ setPosition, mapPosition, isExpanded, readOnly = false }) {
+// Correction : On ajoute la prop 'position' dans les arguments
+export default function LocationPicker({ position, setPosition, mapPosition, isExpanded, readOnly = false }) {
   return (
     <MapContainer
       center={mapPosition}
       zoom={15}
       style={{ height: "100%", width: "100%", borderRadius: isExpanded ? "0px" : "12px" }}
-      // On désactive les interactions si c'est juste de la lecture
       dragging={!readOnly}
       touchZoom={!readOnly}
       doubleClickZoom={!readOnly}
@@ -55,23 +54,31 @@ export default function LocationPicker({ setPosition, mapPosition, isExpanded, r
       <ResizeMap isExpanded={isExpanded} />
       <ChangeView center={mapPosition} />
 
-      {/* MODIFICATION ICI : On affiche le marqueur fixe DIRECTEMENT */}
       {readOnly ? (
         <Marker position={mapPosition} interactive={false} />
       ) : (
-        <LocationMarker setPosition={setPosition} />
+        // On transmet la position actuelle au marqueur interactif
+        <LocationMarker position={position} setPosition={setPosition} />
       )}
     </MapContainer>
   );
 }
 
-function LocationMarker({ setPosition }) {
-  const [position, setLocalPosition] = useState(null);
+function LocationMarker({ position, setPosition }) {
+  // L'état local est initialisé avec la position du backend (via les props)
+  const [localPos, setLocalPos] = useState(position);
+
+  // Crucial : On synchronise localPos si la position change dans le parent (chargement API)
+  useEffect(() => {
+    setLocalPos(position);
+  }, [position]);
+
   useMapEvents({
     click(e) {
-      setLocalPosition(e.latlng);
+      setLocalPos(e.latlng);
       setPosition(e.latlng);
     },
   });
-  return position ? <Marker position={position} /> : null;
+
+  return localPos ? <Marker position={localPos} /> : null;
 }
