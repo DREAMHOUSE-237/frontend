@@ -24,17 +24,17 @@ const RecherchePage = () => {
 
   const [filters, setFilters] = useState(initialFilters);
   const [currentPage, setCurrentPage] = useState(1);
-  const annoncesPerPage = 8; 
+  const annoncesPerPage = 8;
 
   useEffect(() => {
     fetchInitialData();
   }, []);
 
-const fetchInitialData = async () => {
+  const fetchInitialData = async () => {
     try {
       setLoading(true);
       const data = await BienService.getAll();
-      
+
       // On vérifie que data existe et est un tableau avant de mettre à jour
       if (data) {
         setAnnonces(data);
@@ -56,7 +56,7 @@ const fetchInitialData = async () => {
     setAnnonces(results);
     setCurrentPage(1);
     setLoading(false);
-    
+
     // 2. RESET : On vide les champs après la recherche
     setFilters(initialFilters);
   };
@@ -86,9 +86,9 @@ const fetchInitialData = async () => {
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase ml-1">Type</label>
               <div className="relative">
-                <select 
+                <select
                   value={filters.type} // Liaison
-                  onChange={(e) => setFilters({...filters, type: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, type: e.target.value })}
                   className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl appearance-none outline-none text-sm cursor-pointer text-gray-700">
                   <option value="">Tous les types</option>
                   <option value="LOCATION">Location</option>
@@ -101,9 +101,9 @@ const fetchInitialData = async () => {
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase ml-1">Catégorie</label>
               <div className="relative">
-                <select 
+                <select
                   value={filters.categorie} // Liaison
-                  onChange={(e) => setFilters({...filters, categorie: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, categorie: e.target.value })}
                   className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl appearance-none outline-none text-sm cursor-pointer text-gray-700">
                   <option value="">Toutes catégories</option>
                   <option value="APPARTEMENT">Appartement</option>
@@ -117,18 +117,18 @@ const fetchInitialData = async () => {
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase ml-1">Ville</label>
               <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="Yaoundé..." 
+                <input
+                  type="text"
+                  placeholder="Yaoundé..."
                   value={filters.ville} // Liaison
-                  onChange={(e) => setFilters({...filters, ville: e.target.value})}
-                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none text-sm pl-11 " 
+                  onChange={(e) => setFilters({ ...filters, ville: e.target.value })}
+                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none text-sm pl-11 "
                 />
                 <MapPin className="absolute left-4 top-4 text-[#f97316]" size={18} />
               </div>
             </div>
 
-            <button 
+            <button
               onClick={handleSearchAction}
               className="bg-[#1a2b3c] text-white p-4 rounded-2xl font-black flex items-center justify-center space-x-2 hover:bg-[#007b83] transition-all h-[54px] shadow-lg shadow-gray-200">
               <Search size={20} />
@@ -147,23 +147,23 @@ const fetchInitialData = async () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6 pt-6 border-t border-gray-50 animate-in fade-in duration-300">
               <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase ml-1">Quartier</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={filters.quartier} // Liaison
-                  placeholder="Ex: Bastos" 
-                  onChange={(e) => setFilters({...filters, quartier: e.target.value})}
-                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm  outline-none" 
+                  placeholder="Ex: Bastos"
+                  onChange={(e) => setFilters({ ...filters, quartier: e.target.value })}
+                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm  outline-none"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase ml-1">Prix max (XAF)</label>
                 <div className="relative">
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={filters.prix} // Liaison
-                    placeholder="500000" 
-                    onChange={(e) => setFilters({...filters, prix: e.target.value})}
-                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm  pl-11 outline-none" 
+                    placeholder="500000"
+                    onChange={(e) => setFilters({ ...filters, prix: e.target.value })}
+                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm  pl-11 outline-none"
                   />
                   <Banknote className="absolute left-4 top-4 text-gray-400" size={18} />
                 </div>
@@ -171,12 +171,12 @@ const fetchInitialData = async () => {
               <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase ml-1">Pièces min</label>
                 <div className="relative">
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={filters.pieces} // Liaison
-                    placeholder="2" 
-                    onChange={(e) => setFilters({...filters, pieces: e.target.value})}
-                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm  pl-11 outline-none" 
+                    placeholder="2"
+                    onChange={(e) => setFilters({ ...filters, pieces: e.target.value })}
+                    className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm  pl-11 outline-none"
                   />
                   <LayoutGrid className="absolute left-4 top-4 text-gray-400" size={18} />
                 </div>
@@ -217,9 +217,17 @@ const fetchInitialData = async () => {
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex justify-between items-center mb-2">
                     <p className="text-xl font-extrabold text-[#f97316]">
-                      {annonce.prix?.toLocaleString()} XAF 
+                      {annonce.prix?.toLocaleString()} XAF
                     </p>
+                    <div className="flex items-center gap-1 text-[#facc15]">
+                      <span className="text-sm font-bold text-gray-700">4.0</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                        <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+                      </svg>
+                    </div>
                   </div>
+
+
 
                   <h4 className="text-xl font-bold text-gray-800 mb-2 truncate">
                     {annonce.titreBien || "Sans titre"}
@@ -245,20 +253,20 @@ const fetchInitialData = async () => {
             ))}
           </div>
         )}
-        
+
         {/* Pagination (simplifiée) */}
         {annonces.length > annoncesPerPage && (
-           <div className="mt-16 flex justify-center items-center gap-3">
-              {[...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => paginate(i + 1)}
-                  className={`w-12 h-12 rounded-2xl font-black transition-all ${currentPage === i + 1 ? 'bg-[#f97316] text-white' : 'bg-white text-gray-400 border'}`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-           </div>
+          <div className="mt-16 flex justify-center items-center gap-3">
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i + 1}
+                onClick={() => paginate(i + 1)}
+                className={`w-12 h-12 rounded-2xl font-black transition-all ${currentPage === i + 1 ? 'bg-[#f97316] text-white' : 'bg-white text-gray-400 border'}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
         )}
       </section>
     </div>

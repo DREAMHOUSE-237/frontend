@@ -7,8 +7,8 @@ import {
   ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
-import { getPublicationById } from '../service/auth_service'; 
-import { BienService } from '../service/auth_service'; 
+import { getPublicationById } from '../service/auth_service';
+import { BienService } from '../service/auth_service';
 
 const Details = () => {
   const { id } = useParams();
@@ -31,7 +31,7 @@ const Details = () => {
       try {
         setLoading(true);
         const data = await getPublicationById(id);
-        
+
         // Récupération dynamique stricte depuis le backend (clés : lattitude, longitude)
         if (data.lattitude && data.longitude) {
           setCoords({
@@ -39,7 +39,7 @@ const Details = () => {
             lng: parseFloat(data.longitude)
           });
         }
-        
+
         setBien(data);
       } catch (error) {
         console.error("Erreur lors de la récupération du bien:", error);
@@ -68,7 +68,7 @@ const Details = () => {
   return (
     <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor: '#f8f6f2' }}>
       <div className="max-w-screen-2xl mx-auto p-4 md:p-10 font-sans text-gray-800">
-        
+
         {showLightbox && (
           <div className="fixed inset-0 z-[100000] bg-black/95 flex items-center justify-center p-4">
             <button onClick={() => setShowLightbox(false)} className="absolute top-6 right-6 text-white/70 hover:text-white"><X size={40} /></button>
@@ -80,14 +80,14 @@ const Details = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
           <div className="lg:col-span-8 space-y-10">
-            
+
             {/* Galerie */}
             <div className="space-y-4">
               <div className="relative group overflow-hidden rounded-xl bg-gray-200 aspect-[16/9] shadow-sm">
-                <img 
-                  src={BienService.formatImageUrl(images[activeImg])} 
-                  className="w-full h-full object-cover transition-all duration-700" 
-                  alt={bien.titreBien} 
+                <img
+                  src={BienService.formatImageUrl(images[activeImg])}
+                  className="w-full h-full object-cover transition-all duration-700"
+                  alt={bien.titreBien}
                 />
                 <div className="absolute inset-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={prevImage} className="p-3 bg-white/80 rounded-full shadow"><ChevronLeft size={24} /></button>
@@ -99,7 +99,7 @@ const Details = () => {
               <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
                 {images.map((img, i) => (
                   <img
-                    key={i} 
+                    key={i}
                     src={BienService.formatImageUrl(img)}
                     onClick={() => setActiveImg(i)}
                     className={`w-32 h-20 shrink-0 object-cover rounded-lg cursor-pointer border-2 transition-all ${activeImg === i ? 'border-[#007b83] scale-105 shadow-md' : 'border-transparent opacity-60'}`}
@@ -109,7 +109,7 @@ const Details = () => {
               </div>
             </div>
 
-           {/* Titre et Localisation */}
+            {/* Titre et Localisation */}
             <div className="border-b border-gray-200 pb-8 space-y-3">
               <h1 className="text-4xl font-light text-gray-700 italic">{bien.titreBien || "Sans titre"}</h1>
               <div className="flex items-center text-[#007b83] mt-2 italic">
@@ -138,7 +138,7 @@ const Details = () => {
           </div>
 
           <div className="lg:col-span-4 space-y-12">
-            
+
             {/* Carte 100% Dynamique */}
             <div className={isMapMaximized ? 'fixed inset-0 z-[100000] bg-white' : 'relative h-80 z-10'}>
               <div className={`relative h-full w-full ${isMapMaximized ? '' : 'rounded-3xl shadow-xl overflow-hidden border-4 border-white'}`}>
@@ -158,16 +158,27 @@ const Details = () => {
             </div>
 
             {/* Contact */}
+            {/* Section Contact Responsable */}
             <div className="border border-white bg-white/80 rounded-3xl p-8 text-center space-y-6 shadow-md">
               <div className="w-20 h-20 bg-gray-100 rounded-full mx-auto flex items-center justify-center border border-white shadow-inner">
                 <User size={40} className="text-[#007b83]" />
               </div>
+
               <div>
-                <h3 className="font-bold text-xl italic uppercase tracking-tighter text-gray-900">Service Client</h3>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Réponse rapide</p>
+                {/* Nom remplacé par "Responsable du bien" */}
+                <h3 className="font-bold text-xl italic uppercase tracking-tighter text-gray-900">
+                  Responsable du bien
+                </h3>
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                  Réponse rapide
+                </p>
               </div>
+
+              {/* Lien WhatsApp avec message prédéfini dynamique */}
               <a
-                href={`https://wa.me/${bien.numeroPaiement?.replace(/\s+/g, '')}`}
+                href={`https://wa.me/${bien.numeroPaiement?.replace(/\s+/g, '')}?text=${encodeURIComponent(
+                  `Bonjour, je suis intéressé par votre annonce "${bien.titreBien}" située à ${bien.quartier} (${bien.prix} FCFA). Est-elle toujours disponible ?`
+                )}`}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full bg-[#007b83] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-[#00666d] transition-all shadow-lg uppercase text-sm"
@@ -177,7 +188,7 @@ const Details = () => {
             </div>
 
             {/* Section Commentaires */}
-             <div className="space-y-6">
+            <div className="space-y-6">
               <h3 className="font-bold text-xs uppercase text-gray-400 tracking-[0.2em] italic border-b border-gray-200 pb-4">Discussions récents</h3>
               <div className="max-h-80 overflow-y-auto pr-3 space-y-6 scrollbar-thin">
                 {commentsList.map(c => (
