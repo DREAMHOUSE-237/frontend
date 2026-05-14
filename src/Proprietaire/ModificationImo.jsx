@@ -17,16 +17,16 @@ const ModifierPublication = () => {
   const [saveLoading, setSaveLoading] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
 
-  const [position, setPosition] = useState({ lat: 3.848, lng: 11.502 });
-  const [mapPosition, setMapPosition] = useState([3.848, 11.502]);
+  const [position, setPosition] = useState();
+  const [mapPosition, setMapPosition] = useState();
 
   const [formData, setFormData] = useState({
-    titre: "",
+    titreBien: "",
     prix: "",
     superficie: "",
     pieces: "",
     description: "",
-    typebienimmobilier: "",
+    typeBienImmobilier: "",
     typePublication: "LOCATION",
     categorie: "NON_MEUBLE",
     region: "",
@@ -46,12 +46,12 @@ const ModifierPublication = () => {
         const data = await getPublicationById(id);
 
         setFormData({
-          titre: data.titreBien || "",
+          titreBien: data.titreBien || "",
           prix: data.prix || "",
           superficie: data.superficie || data.superfie || "",
           pieces: data.nbrePiece || "",
           description: data.description || "",
-          typebienimmobilier: data.typebienimmobilier || "", // Attention à la casse selon votre backend
+          typeBienImmobilier: data.typeBienImmobilier || "", // Attention à la casse selon votre backend
           typePublication: data.typePublication || "LOCATION",
           categorie: data.categorie || "NON_MEUBLE",
           region: data.region || "",
@@ -61,18 +61,19 @@ const ModifierPublication = () => {
           documents: data.docuements || [] // Récupération des documents
         });
 
-       if (data.lattitude && data.Longitude) {
-        const lat = parseFloat(data.lattitude); // 3.805...
-        const lng = parseFloat(data.Longitude); // 11.472...
+        // À l'intérieur de loadPublication dans ton useEffect
+        if (data.lattitude && data.longitude) { // Vérifie bien si c'est longitude ou Longitude dans ton JSON
+          const lat = parseFloat(data.lattitude);
+          const lng = parseFloat(data.longitude);
 
-        const coords = { lat, lng };
-        
-        // On met à jour la position du marqueur ET le centre de la carte
-        setPosition(coords);
-        setMapPosition([lat, lng]);
-        
-        console.log("Coordonnées chargées :", coords);
-      }
+          const coords = { lat, lng };
+
+          // On met à jour le marqueur ET le centre de la carte
+          setPosition(coords);
+          setMapPosition([lat, lng]);
+
+          console.log("Marqueur positionné sur :", coords);
+        }
       } catch (err) {
         console.error(err);
         alert("Erreur lors du chargement");
@@ -174,7 +175,7 @@ const ModifierPublication = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold flex items-center gap-2"><Type size={16} /> Titre</label>
-                  <input type="text" value={formData.titre} onChange={(e) => setFormData({ ...formData, titre: e.target.value })} className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#007b83]" />
+                  <input type="text" value={formData.titreBien} onChange={(e) => setFormData({ ...formData, titreBien: e.target.value })} className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#007b83]" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold flex items-center gap-2"><Clock size={16} /> Superficie (m²)</label>
@@ -267,12 +268,24 @@ const ModifierPublication = () => {
                     <option value="NON_MEUBLE">NON_MEUBLE</option>
                   </select>
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase">Type de bien</label>
-                  <select value={formData.typebienimmobilier} onChange={(e) => setFormData({ ...formData, typebienimmobilier: e.target.value })} className="w-full p-4 mt-2 bg-white border border-gray-200 rounded-xl outline-none focus:border-[#007b83]">
-                    {["APPARTEMENT", "MAISON", "TERRAIN", "IMMEUBLE", "VILLA", "STUDIO", "BOUTIQUE", "BUREAU", "CHAMBRE"].map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold">Type Bien Immobilier</label>
+                  <select
+                    value={formData.typeBienImmobilier}
+                    onChange={(e) => setFormData({ ...formData, typeBienImmobilier: e.target.value })}
+                    className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] appearance-none cursor-pointer"
+                    required
+                  >
+                    <option value="" disabled>-- Choisir une option --</option>
+                    <option value="APPARTEMENT">APPARTEMENT</option>
+                    <option value="MAISON">MAISON</option>
+                    <option value="TERRAIN">TERRAIN</option>
+                    <option value="IMMEUBLE">IMMEUBLE</option>
+                    <option value="VILLA">VILLA</option>
+                    <option value="STUDIO">STUDIO</option>
+                    <option value="BOUTIQUE">BOUTIQUE</option>
+                    <option value="BUREAU">BUREAU</option>
+                    <option value="CHAMBRE">CHAMBRE</option>
                   </select>
                 </div>
               </div>

@@ -98,7 +98,7 @@ const MyPublications = () => {
                         <MapPin size={14} className="text-[#007b83]" /> {pub.quartier}, {pub.ville}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Home size={14} className="text-[#ff8800]" /> {pub.typebienimmobilier}
+                        <Home size={14} className="text-[#ff8800]" /> {pub.typeBienImmobilier}
                       </span>
                     </div>
                   </div>

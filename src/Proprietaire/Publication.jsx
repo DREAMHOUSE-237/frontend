@@ -31,7 +31,7 @@ const PublicationAnnonce = () => {
         description: '',
         typePublication: '',
         numeroPaiement: '',
-        typebienimmobilier: '',
+        typeBienImmobilier: '',
         categorie: '',
         region: '',
         ville: '',
@@ -113,7 +113,7 @@ const PublicationAnnonce = () => {
             );
 
             console.log("SUCCESS :", res);
-            alert("Annonce publiée avec succès 🎉");
+            alert("Annonce publiée avec succès ");
 
         } catch (err) {
             console.error("ERREUR :", err);
@@ -255,8 +255,8 @@ const PublicationAnnonce = () => {
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold">Type Bien Immobilier</label>
                                 <select
-                                    name='typebienimmobilier'
-                                    value={formData.typebienimmobilier}
+                                    name='typeBienImmobilier'
+                                    value={formData.typeBienImmobilier}
                                     onChange={handleInputChange}
                                     className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] appearance-none cursor-pointer"
                                     required

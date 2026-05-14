@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import {
   MapPin, DollarSign, Key, Calendar, Users,
   MessageSquare, Send, User,
-  Maximize2, Minimize2,
+  Maximize2, Minimize2,Home,
   ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
@@ -122,8 +122,10 @@ const Details = () => {
             <div className="grid grid-cols-1 gap-2 bg-white/60 p-6 rounded-xl border border-white/40 shadow-sm">
               <InfoLine icon={<DollarSign size={18} />} label="Prix" value={`${bien.prix?.toLocaleString()} FCFA`} />
               <InfoLine icon={<Key size={18} />} label="Type" value={bien.typePublication} />
+              <InfoLine icon={<Home size={18} />} label="Type Bien Immobilier" value={bien.typeBienImmobilier} />
               <InfoLine icon={<Calendar size={18} />} label="Catégorie" value={bien.categorie} />
               <InfoLine icon={<Users size={18} />} label="Pièces" value={bien.nbrePiece} />
+
             </div>
 
             {/* Description dynamique */}

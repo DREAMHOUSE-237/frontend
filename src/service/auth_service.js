@@ -61,7 +61,7 @@ export const createAnnoce = async (data, images, position, adresse, documents) =
             superfie: parseFloat(data.superficie),
             nbrePiece: parseInt(data.nbrePiece),
             description: data.description,
-            typebienimmobilier: data.typebienimmobilier,
+            typeBienImmobilier: data.typeBienImmobilier,
             categorie: data.categorie,
             prix: parseFloat(data.prix),
             numeroPaiement: parseInt(data.numeroPaiement),
@@ -120,13 +120,13 @@ export const updateAnnonce = async (id, formData, position) => {
 
   // 1. Le DTO (Données textuelles)
   const bienDTO = {
-    titreBien: formData.titre,
+    titreBien: formData.titreBien,
     superfie: parseFloat(formData.superficie) || 0,
     nbrePiece: parseInt(formData.pieces) || 0,
     description: formData.description,
     prix: parseFloat(formData.prix) || 0,
     typePublication: formData.typePublication,
-    typebienimmobilier: formData.typebienimmobilier,
+    typeBienImmobilier: formData.typeBienImmobilier,
     categorie: formData.categorie,
     adresse: {
       region: formData.region,
@@ -150,11 +150,10 @@ export const updateAnnonce = async (id, formData, position) => {
   }
 
   // 3. Ajout des nouveaux DOCUMENTS uniquement
-  // On suppose que tu as un champ 'documents' dans ton état formData
   if (formData.documents) {
     formData.documents.forEach((doc) => {
       if (doc instanceof File) {
-        data.append('documents', doc); // Le nom 'documents' doit correspondre au @RequestPart du backend
+        data.append('documents', doc); 
       }
     });
   }
