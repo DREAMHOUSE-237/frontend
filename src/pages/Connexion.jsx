@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ShieldCheck } from 'lucide-react'; // ShieldCheck pour le style Identity
 import { useNavigate } from 'react-router-dom';
 import acc3 from '../assets/acc3.jpg';
 
 // Importation des nouveaux sous-composants
 import LoginForm from './Connexion2';
 import Inscription from './Inscription';
+import IdentityVerification from './Indetity';
 
 const AuthPage = () => {
     const navigate = useNavigate();
-    const [isLogin, setIsLogin] = useState(true);
+    // Utilisation d'un état "mode" pour gérer les 3 vues
+    const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup' | 'identity'
 
     return (
         <div className="min-h-screen bg-white flex overflow-hidden font-sans">
@@ -27,27 +29,56 @@ const AuthPage = () => {
                                 <span className="text-[#ff8800] ml-1">House</span>
                             </div>
                         </div>
+                        
+                        {/* Titres dynamiques selon le mode */}
                         <h2 className="text-xl font-bold text-gray-800">
-                            {isLogin ? "Bienvenue" : "Créer un compte"}
+                            {authMode === 'login' && "Bienvenue"}
+                            {authMode === 'signup' && "Créer un compte"}
+                            {authMode === 'identity' && "Vérification d'identité"}
                         </h2>
                         <p className="text-sm text-gray-500 mt-1">
-                            {isLogin ? "Connectez-vous pour explorer le monde" : "Rejoignez-nous pour gérer vos biens"}
+                            {authMode === 'login' && "Connectez-vous pour explorer le monde"}
+                            {authMode === 'signup' && "Rejoignez-nous pour gérer vos biens"}
+                            {authMode === 'identity' && "Sécurisez votre profil pour publier des annonces"}
                         </p>
                     </div>
 
                     {/* Affichage conditionnel des sections */}
-                    {isLogin ? <LoginForm /> : <Inscription/>}
+                    <div className="transition-all duration-300">
+                        {authMode === 'login' && <LoginForm />}
+                        {authMode === 'signup' && <Inscription />}
+                        {authMode === 'identity' && <IdentityVerification/>}
+                    </div>
 
-                    {/* Toggle entre les deux modes */}
-                    <p className="text-center text-sm text-gray-400 mt-8 font-medium">
-                        {isLogin ? "Vous n'avez pas de compte ?" : "Vous avez déjà un compte ?"} 
-                        <span 
-                            onClick={() => setIsLogin(!isLogin)}
-                            className="text-[#007b83] font-bold cursor-pointer hover:underline ml-1"
-                        >
-                            {isLogin ? "Inscrivez-vous" : "Connectez-vous"}
-                        </span>
-                    </p>
+                    {/* Toggle entre les modes */}
+                    <div className="mt-8 space-y-4">
+                        <p className="text-center text-sm text-gray-400 font-medium">
+                            {authMode === 'login' ? "Vous n'avez pas de compte ?" : "Vous avez déjà un compte ?"} 
+                            <span 
+                                onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                                className="text-[#007b83] font-bold cursor-pointer hover:underline ml-1"
+                            >
+                                {authMode === 'login' ? "Inscrivez-vous" : "Connectez-vous"}
+                            </span>
+                        </p>
+
+                        {/* Bouton rapide pour accéder à la vérification (Identity) */}
+                        {authMode !== 'identity' ? (
+                            <button 
+                                onClick={() => setAuthMode('identity')}
+                                className="w-full flex items-center justify-center gap-2 text-xs font-bold text-gray-400 hover:text-[#ff8800] transition-colors border-t border-gray-100 pt-4"
+                            >
+                                <ShieldCheck size={16} /> Besoin de vérifier votre identité ?
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={() => setAuthMode('login')}
+                                className="w-full text-center text-xs font-bold text-[#007b83] hover:underline"
+                            >
+                                Retour à la connexion
+                            </button>
+                        )}
+                    </div>
                 </div>
                 
                 {/* FOOTER DE GAUCHE */}
@@ -70,10 +101,13 @@ const AuthPage = () => {
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"></div>
                 <div className="absolute bottom-20 left-16 right-16">
                     <h2 className="text-5xl font-bold text-white leading-tight mb-4">
-                        L'excellence <br/> n'attend pas.
+                        {authMode === 'identity' ? "Sécurisez votre \n futur." : "L'excellence \n n'attend pas."}
                     </h2>
                     <p className="text-white/80 text-lg font-light max-w-md border-l-2 border-[#007b83] pl-4">
-                        Rejoignez la communauté Dreamhouse et faites briller vos annonces immobilières.
+                        {authMode === 'identity' 
+                            ? "La vérification d'identité renforce la confiance entre propriétaires et locataires."
+                            : "Rejoignez la communauté Dreamhouse et faites briller vos annonces immobilières."
+                        }
                     </p>
                 </div>
             </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     ChevronLeft, ChevronRight, MapPin, Layout,
     Sparkles, Type, AlignLeft, DollarSign, Clock, Check,
-    Camera, Plus, Home, X,Smartphone , Navigation, Search, Maximize2, Minimize2
+    Camera, Plus, Home, X,Smartphone , Navigation,Loader2 ,Search, Maximize2, Minimize2
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
 import SearchLocation from '../components/Map/SearchLocation';
@@ -437,8 +437,10 @@ const PublicationAnnonce = () => {
                 <div className="mt-12 flex items-center justify-between border-t border-gray-100 pt-8">
                     {step > 1 ? (
                         <button
+                            type="button"
+                            disabled={loading}
                             onClick={() => setStep(step - 1)}
-                            className="px-6 py-3 text-gray-600 font-semibold hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+                            className="px-6 py-3 text-gray-600 font-semibold hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
                         >
                             <ChevronLeft size={20} /> Précédent
                         </button>
@@ -453,12 +455,25 @@ const PublicationAnnonce = () => {
                                 handleSubmit();
                             }
                         }}
-                        className="px-8 py-3 bg-[#007b83] text-white rounded-lg font-bold shadow-sm hover:bg-[#00666d] transition-all flex items-center gap-2"
+                        className="px-8 py-3 bg-[#007b83] text-white rounded-lg font-bold shadow-sm hover:bg-[#00666d] transition-all flex items-center gap-2 disabled:bg-[#007b83]/70 disabled:cursor-not-allowed"
                     >
                         {step === 3 ? (
-                            <><Check size={20} /> TERMINER</>
+                            loading ? (
+                                <>
+                                    <Loader2 size={20} className="animate-spin" />
+                                    PUBLICATION...
+                                </>
+                            ) : (
+                                <>
+                                    <Check size={20} /> 
+                                    TERMINER
+                                </>
+                            )
                         ) : (
-                            <>Suivant <ChevronRight size={20} /></>
+                            <>
+                                Suivant 
+                                <ChevronRight size={20} />
+                            </>
                         )}
                     </button>
                 </div>

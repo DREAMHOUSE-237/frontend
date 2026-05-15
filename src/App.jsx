@@ -7,6 +7,7 @@ import Footer from './components/Footer'
 import ScrollToTop from "./components/ScrollToTop"
 import Equipe from './components/Equipe'
 import Navbar2 from './components/Navbar2'
+import Navbar3 from './components/Navbar3'
 
 // Import des pages publiques
 import Accueil from './pages/Accueil'
@@ -17,7 +18,7 @@ import Inscription from './pages/Inscription'
 import Connexion from './pages/Connexion'
 import LoginForm from './pages/Connexion2'
 import Details from './pages/detail'
-
+import IdentityVerification from './pages/Indetity'
 // Import des pages protégées
 import ProprietaireHome from './Proprietaire/Accueil2'
 import Publication from './Proprietaire/Publication'
@@ -90,6 +91,7 @@ function App() {
           <Route path='/contact' element={<Contact />} />
           <Route path='/inscription' element={<Inscription />} />
           <Route path='/connexion' element={<Connexion />} />
+          <Route  path='/identity' element={<IdentityVerification/>}/>
           
           {/* Passage de la fonction de succès au formulaire de connexion */}
           <Route 

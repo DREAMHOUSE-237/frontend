@@ -1,217 +1,241 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { IdentityAdminService, AdminUserService } from '../service/auth_service';
 import { 
-    Users, Clock, CheckCircle, XCircle, Trash2, Eye, 
-    ShieldCheck, Search, MoreVertical, LayoutDashboard,
-    Loader2, RefreshCcw
+    Check, X, Eye, Clock, List, ShieldCheck, AlertCircle, 
+    Users, Fingerprint, LogOut, ShieldAlert, UserCheck, UserX 
 } from 'lucide-react';
-import { adminAPI } from '../service/admin_service'; // Assure-toi du chemin
 
 const AdminDashboard = () => {
+    const [activeSection, setActiveSection] = useState('identity'); // 'identity' ou 'users'
+    const [requests, setRequests] = useState([]);
     const [users, setUsers] = useState([]);
-    const [pending, setPending] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('all'); // 'all' ou 'pending'
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [view, setView] = useState('pending'); 
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Chargement des données
-    const loadData = async () => {
+    useEffect(() => {
+        fetchData();
+    }, [activeSection, view]);
+
+    const fetchData = async () => {
         setLoading(true);
         try {
-            const [usersRes, pendingRes] = await Promise.all([
-                adminAPI.getUsers(),
-                adminAPI.getPendingUsers()
-            ]);
-            setUsers(usersRes.data.results || usersRes.data || []);
-            setPending(pendingRes.data.results || pendingRes.data || []);
-        } catch (error) {
-            console.error("Erreur chargement admin:", error);
+            if (activeSection === 'identity') {
+                const data = view === 'pending' 
+                    ? await IdentityAdminService.getPendingRequests() 
+                    : await IdentityAdminService.getAllRequests();
+                setRequests(Array.isArray(data) ? data : []);
+            } else {
+                const data = await AdminUserService.getUsers();
+                // On gère la pagination du backend (data.results)
+                setUsers(data.results || []);
+            }
+        } catch (err) {
+            console.error("Erreur chargement", err);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { loadData(); }, []);
+    const handleIdentityReview = async (id, action) => {
+        let payload = {};
+        if (action === 'reject') {
+            const reason = prompt("Motif du rejet :");
+            if (!reason) return;
+            payload = { action: 'reject', rejection_reason: reason };
+        } else {
+            const nom = prompt("Nom officiel (CNI) :");
+            const prenom = prompt("Prénom officiel (CNI) :");
+            const cni = prompt("Numéro de CNI :");
+            payload = { action: 'approve', nom, prenom, numero_cni: cni };
+        }
 
-    const handleAction = async (id, action) => {
-        if (!window.confirm(`Confirmer l'action : ${action} ?`)) return;
         try {
-            if (action === 'delete') await adminAPI.deleteUser(id);
-            else await adminAPI.validateCNI({ user_id: id, action });
-            loadData(); // Rafraîchir
-        } catch (error) {
-            alert("Erreur lors de l'opération");
+            // 1. On met à jour le service Identity
+            await IdentityAdminService.reviewRequest(id, payload);
+            
+            // 2. IMPORTANT : On valide aussi dans le User-Service pour changer le rôle
+            const userPayload = { 
+                user_id: selectedRequest.user_id || id, // Assure-toi d'envoyer l'ID utilisateur
+                action, 
+                ...payload 
+            };
+            await AdminUserService.validateCNI(userPayload);
+
+            setIsModalOpen(false);
+            fetchData();
+        } catch (err) {
+            alert("Erreur lors de la validation croisée");
         }
     };
 
-    // Filtrage pour la recherche
-    const filteredUsers = users.filter(u => 
-        u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.role.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const toggleUserStatus = async (userId, currentStatus) => {
+        try {
+            await AdminUserService.updateUserStatus(userId, !currentStatus);
+            fetchData();
+        } catch (err) {
+            alert("Erreur modification statut");
+        }
+    };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex">
-            
-            {/* SIDEBAR MINI */}
-            <div className="w-20 bg-[#1a2b3c] flex flex-col items-center py-8 space-y-8 text-white">
-                <div className="w-10 h-10 bg-[#ff8800] rounded-xl flex items-center justify-center font-bold text-xl">D</div>
-                <LayoutDashboard size={24} className="text-[#007b83] cursor-pointer" />
-                <Users size={24} className="opacity-50 hover:opacity-100 cursor-pointer" />
-                <SettingsIcon size={24} className="opacity-50 hover:opacity-100 cursor-pointer" />
-            </div>
+        <div className="flex min-h-screen bg-gray-100 font-sans">
+            {/* --- SIDEBAR --- */}
+            <aside className="w-64 bg-gray-900 text-white flex flex-col fixed h-full">
+                <div className="p-6 border-b border-gray-800">
+                    <h2 className="text-xl font-black text-blue-400 tracking-tighter">DREAMHOUSE ADMIN</h2>
+                </div>
 
-            {/* MAIN CONTENT */}
-            <div className="flex-1 p-8 overflow-y-auto">
-                <div className="max-w-7xl mx-auto">
-                    
-                    {/* HEADER */}
-                    <div className="flex justify-between items-end mb-8">
-                        <div>
-                            <h1 className="text-3xl font-black text-[#1a2b3c]">Dashboard Admin</h1>
-                            <p className="text-gray-500 font-medium">Gestion des utilisateurs et validations d'identité</p>
-                        </div>
-                        <button 
-                            onClick={loadData}
-                            className="p-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm"
-                        >
-                            <RefreshCcw size={20} className={loading ? "animate-spin" : ""} />
-                        </button>
+                <nav className="flex-1 p-4 space-y-2">
+                    <button 
+                        onClick={() => setActiveSection('identity')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeSection === 'identity' ? 'bg-blue-600 shadow-lg shadow-blue-900/50' : 'hover:bg-gray-800 text-gray-400'}`}
+                    >
+                        <Fingerprint size={20} /> <span className="font-bold">Identités</span>
+                    </button>
+
+                    <button 
+                        onClick={() => setActiveSection('users')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeSection === 'users' ? 'bg-blue-600 shadow-lg shadow-blue-900/50' : 'hover:bg-gray-800 text-gray-400'}`}
+                    >
+                        <Users size={20} /> <span className="font-bold">Utilisateurs</span>
+                    </button>
+                </nav>
+
+                <div className="p-4 border-t border-gray-800">
+                    <button className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-xl transition font-bold">
+                        <LogOut size={20} /> Déconnexion
+                    </button>
+                </div>
+            </aside>
+
+            {/* --- MAIN CONTENT --- */}
+            <main className="flex-1 ml-64 p-10">
+                <header className="mb-10 flex justify-between items-end">
+                    <div>
+                        <h1 className="text-4xl font-black text-gray-900 uppercase">
+                            {activeSection === 'identity' ? 'Vérification Identité' : 'Gestion Utilisateurs'}
+                        </h1>
+                        <p className="text-gray-500 mt-2 font-medium">Panneau de contrôle des accès et de la sécurité</p>
                     </div>
 
-                    {/* STATS CARDS */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                        <StatCard icon={<Users size={24}/>} label="Total Utilisateurs" value={users.length} color="bg-blue-500" />
-                        <StatCard icon={<Clock size={24}/>} label="En attente CNI" value={pending.length} color="bg-orange-500" />
-                        <StatCard icon={<ShieldCheck size={24}/>} label="Comptes Vérifiés" value={users.filter(u => u.is_verified).length} color="bg-emerald-500" />
-                    </div>
-
-                    {/* TABS & SEARCH */}
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between p-6 border-b border-gray-50 gap-4">
-                            <div className="flex bg-gray-100 p-1 rounded-xl w-fit">
-                                <button 
-                                    onClick={() => setActiveTab('all')}
-                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'all' ? 'bg-white text-[#1a2b3c] shadow-sm' : 'text-gray-500'}`}
-                                >
-                                    Tous les utilisateurs
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('pending')}
-                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'pending' ? 'bg-white text-[#1a2b3c] shadow-sm' : 'text-gray-500'}`}
-                                >
-                                    En attente 
-                                    {pending.length > 0 && <span className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{pending.length}</span>}
-                                </button>
-                            </div>
-
-                            <div className="relative">
-                                <Search className="absolute left-3 top-3 text-gray-400" size={18} />
-                                <input 
-                                    type="text" 
-                                    placeholder="Rechercher un email..."
-                                    className="pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm w-full md:w-64 focus:ring-2 focus:ring-[#007b83]"
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
+                    {activeSection === 'identity' && (
+                        <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-gray-200">
+                            <button onClick={() => setView('pending')} className={`px-5 py-2 rounded-xl text-xs font-black transition ${view === 'pending' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'}`}>EN ATTENTE</button>
+                            <button onClick={() => setView('all')} className={`px-5 py-2 rounded-xl text-xs font-black transition ${view === 'all' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'}`}>HISTORIQUE</button>
                         </div>
+                    )}
+                </header>
 
-                        {/* TABLE SECTION */}
-                        <div className="overflow-x-auto">
-                            {loading ? (
-                                <div className="flex flex-col items-center py-20">
-                                    <Loader2 className="animate-spin text-[#007b83] mb-4" size={40} />
-                                    <p className="text-gray-500 font-bold">Chargement des données...</p>
+                {loading ? (
+                    <div className="flex justify-center py-20 text-gray-400 font-bold animate-pulse">CHARGEMENT DES DONNÉES...</div>
+                ) : (
+                    <div className="space-y-4">
+                        {/* Vue Identity */}
+                        {activeSection === 'identity' && requests.map((req) => (
+                            <div key={req.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-xl transition-all">
+                                <div className="flex items-center gap-5">
+                                    <div className={`p-4 rounded-2xl ${req.status === 'verified' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>
+                                        {req.status === 'verified' ? <ShieldCheck /> : <Clock />}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black text-gray-900">{req.email}</h3>
+                                        <div className="flex gap-2 mt-1">
+                                            <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-black uppercase tracking-widest">{req.requested_role}</span>
+                                            <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase ${req.status === 'verified' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{req.status}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            ) : (
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="bg-gray-50/50 text-[11px] uppercase tracking-widest text-gray-400 font-black">
+                                <button onClick={() => { setSelectedRequest(req); setIsModalOpen(true); }} className="px-6 py-3 bg-gray-900 text-white rounded-2xl font-black text-xs hover:bg-blue-600 transition">EXAMINER</button>
+                            </div>
+                        ))}
+
+                        {/* Vue Utilisateurs */}
+                        {activeSection === 'users' && (
+                            <div className="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-100">
+                                <table className="w-full text-left">
+                                    <thead className="bg-gray-50 text-gray-400 text-[11px] font-black uppercase tracking-widest border-b border-gray-100">
+                                        <tr>
                                             <th className="px-8 py-4">Utilisateur</th>
                                             <th className="px-8 py-4">Rôle</th>
-                                            <th className="px-8 py-4">Statut</th>
+                                            <th className="px-8 py-4">Status</th>
                                             <th className="px-8 py-4 text-right">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
-                                        {(activeTab === 'all' ? filteredUsers : pending).map((user) => (
-                                            <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
-                                                <td className="px-8 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full bg-[#1a2b3c] flex items-center justify-center text-white font-bold">
-                                                            {user.email.charAt(0).toUpperCase()}
-                                                        </div>
-                                                        <span className="font-bold text-gray-700">{user.email}</span>
-                                                    </div>
+                                        {users.map(user => (
+                                            <tr key={user.id} className="hover:bg-gray-50/50 transition">
+                                                <td className="px-8 py-5">
+                                                    <p className="font-bold text-gray-900">{user.email}</p>
+                                                    <p className="text-[10px] text-gray-400 font-mono">ID: {user.id}</p>
                                                 </td>
-                                                <td className="px-8 py-4">
-                                                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${user.role === 'admin' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-                                                        {user.role}
+                                                <td className="px-8 py-5 text-sm font-medium text-gray-600 uppercase tracking-tighter">{user.role}</td>
+                                                <td className="px-8 py-5">
+                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                        {user.is_active ? 'ACTIF' : 'BANNI'}
                                                     </span>
                                                 </td>
-                                                <td className="px-8 py-4">
-                                                    {user.is_verified ? (
-                                                        <span className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold">
-                                                            <CheckCircle size={14} /> Vérifié
-                                                        </span>
-                                                    ) : (
-                                                        <span className="flex items-center gap-1.5 text-orange-500 text-xs font-bold">
-                                                            <Clock size={14} /> En attente
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="px-8 py-4 text-right space-x-2">
-                                                    {activeTab === 'pending' ? (
-                                                        <>
-                                                            <button onClick={() => handleAction(user.id, 'approve')} className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
-                                                                <CheckCircle size={18} />
-                                                            </button>
-                                                            <button onClick={() => handleAction(user.id, 'reject')} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all shadow-sm">
-                                                                <XCircle size={18} />
-                                                            </button>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <button onClick={() => setSelectedUser(user)} className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-[#1a2b3c] hover:text-white transition-all">
-                                                                <Eye size={18} />
-                                                            </button>
-                                                            <button onClick={() => handleAction(user.id, 'delete')} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all">
-                                                                <Trash2 size={18} />
-                                                            </button>
-                                                        </>
-                                                    )}
+                                                <td className="px-8 py-5 text-right">
+                                                    <button 
+                                                        onClick={() => toggleUserStatus(user.id, user.is_active)}
+                                                        className={`p-2 rounded-xl transition ${user.is_active ? 'text-red-500 hover:bg-red-50' : 'text-green-500 hover:bg-green-50'}`}
+                                                    >
+                                                        {user.is_active ? <UserX size={20} /> : <UserCheck size={20} />}
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* MODALE DÉTAILS USER */}
-            {selectedUser && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-                    <div className="bg-white rounded-[2.5rem] p-10 max-w-lg w-full relative animate-in zoom-in-95 duration-300">
-                        <button onClick={() => setSelectedUser(null)} className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-full">
-                            <X size={24} />
-                        </button>
-                        <div className="flex flex-col items-center text-center space-y-4">
-                            <div className="w-24 h-24 rounded-3xl bg-gray-100 flex items-center justify-center text-3xl font-black text-[#1a2b3c]">
-                                {selectedUser.email.charAt(0).toUpperCase()}
                             </div>
-                            <h2 className="text-2xl font-black text-[#1a2b3c]">{selectedUser.email}</h2>
-                            <span className="px-4 py-1.5 bg-[#007b83]/10 text-[#007b83] rounded-full text-xs font-black uppercase tracking-widest italic">
-                                {selectedUser.role}
-                            </span>
-                        </div>
+                        )}
+                    </div>
+                )}
+            </main>
 
-                        <div className="mt-10 space-y-4 bg-gray-50 p-6 rounded-3xl border border-gray-100">
-                            <DetailRow label="ID Utilisateur" value={selectedUser.id} />
-                            <DetailRow label="Statut Vérification" value={selectedUser.is_verified ? "Validé" : "En attente"} />
-                            <DetailRow label="Dernière Connexion" value="Aujourd'hui" />
+            {/* --- MODALE IDENTITY --- */}
+            {isModalOpen && selectedRequest && (
+                <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-md flex items-center justify-center p-6 z-50">
+                    <div className="bg-white rounded-[40px] max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+                        <div className="p-8 border-b flex justify-between items-center">
+                            <h2 className="text-2xl font-black text-gray-900 uppercase">Dossier #{selectedRequest.id.split('-')[0]}</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="p-3 bg-gray-100 rounded-full"><X/></button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-10 grid grid-cols-2 gap-10">
+                            <div className="space-y-6">
+                                <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100">
+                                    <p className="text-blue-400 text-[10px] font-black uppercase mb-1">Email demandeur</p>
+                                    <p className="text-xl font-bold text-blue-900">{selectedRequest.email}</p>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                        <p className="text-gray-400 text-[10px] font-black uppercase mb-3">Recto CNI</p>
+                                        <img src={selectedRequest.cni_recto} className="w-full rounded-xl border-2 border-white shadow-md cursor-pointer hover:scale-[1.02] transition" onClick={() => window.open(selectedRequest.cni_recto)}/>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                        <p className="text-gray-400 text-[10px] font-black uppercase mb-3">Verso CNI</p>
+                                        <img src={selectedRequest.cni_verso} className="w-full rounded-xl border-2 border-white shadow-md cursor-pointer hover:scale-[1.02] transition" onClick={() => window.open(selectedRequest.cni_verso)}/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col justify-between">
+                                <div className="bg-gray-50 p-8 rounded-[32px] border border-gray-200">
+                                    <h4 className="font-black text-gray-900 mb-6 uppercase tracking-widest">Décision Finale</h4>
+                                    <div className="space-y-4">
+                                        <button onClick={() => handleIdentityReview(selectedRequest.id, 'approve')} className="w-full py-5 bg-green-600 text-white rounded-3xl font-black shadow-lg shadow-green-200 flex items-center justify-center gap-3 hover:bg-green-700 transition">
+                                            <Check /> ACCEPTER L'IDENTITÉ
+                                        </button>
+                                        <button onClick={() => handleIdentityReview(selectedRequest.id, 'reject')} className="w-full py-5 bg-red-50 text-red-600 border border-red-100 rounded-3xl font-black flex items-center justify-center gap-3 hover:bg-red-100 transition">
+                                            <X /> REJETER LE DOSSIER
+                                        </button>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-gray-300 font-mono text-center">DreamHouse Identity Validation Protocol v1.0</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -219,27 +243,5 @@ const AdminDashboard = () => {
         </div>
     );
 };
-
-/* SOUS-COMPOSANTS */
-const StatCard = ({ icon, label, value, color }) => (
-    <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex items-center gap-5">
-        <div className={`w-14 h-14 ${color} text-white rounded-2xl flex items-center justify-center shadow-lg`}>
-            {icon}
-        </div>
-        <div>
-            <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">{label}</p>
-            <p className="text-2xl font-black text-[#1a2b3c]">{value}</p>
-        </div>
-    </div>
-);
-
-const DetailRow = ({ label, value }) => (
-    <div className="flex justify-between items-center text-sm">
-        <span className="text-gray-400 font-bold">{label}</span>
-        <span className="text-[#1a2b3c] font-black">{value}</span>
-    </div>
-);
-
-const SettingsIcon = ({ size, className }) => <RefreshCcw size={size} className={className} />;
 
 export default AdminDashboard;

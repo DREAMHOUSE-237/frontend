@@ -3,28 +3,28 @@ import { useParams } from 'react-router-dom';
 import {
   MapPin, DollarSign, Key, Calendar, Users,
   MessageSquare, Send, User,
-  Maximize2, Minimize2,Home,
-  ChevronLeft, ChevronRight, X
+  Maximize2, Minimize2, Home, Loader2,
+  ChevronLeft, ChevronRight, X, Heart, Trash2, Reply
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
 import { getPublicationById } from '../service/auth_service';
-import { BienService } from '../service/auth_service';
-
+import { BienService, CommentService } from '../service/auth_service';
+import { useNavigate } from 'react-router-dom'
 const Details = () => {
   const { id } = useParams();
   const [bien, setBien] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [comment, setComment] = useState("");
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState("");
+  const [sending, setSending] = useState(false);
   const [isMapMaximized, setIsMapMaximized] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
   const [coords, setCoords] = useState(null); // Initialisé à null pour forcer la donnée backend
+  const [replyingTo, setReplyingTo] = useState(null); // Stocke l'ID du commentaire en cours de réponse
+  const [replyText, setReplyText] = useState("");
+  const navigate = useNavigate();
 
-  const commentsList = [
-    { id: 1, user: "Kieran Junior", text: "L'appartement est-il disponible immédiatement ?", date: "Hier" },
-    { id: 2, user: "Alice Mbarga", text: "La caution est-elle négociable ?", date: "Il y a 2 jours" },
-    { id: 3, user: "Marc Etoundi", text: "Superbe vue sur le Golf, je recommande.", date: "Il y a 5 jours" }
-  ];
 
   useEffect(() => {
     const fetchBien = async () => {
@@ -41,6 +41,8 @@ const Details = () => {
         }
 
         setBien(data);
+        const fetchedComments = await CommentService.getByPublication(id);
+        setComments(fetchedComments);
       } catch (error) {
         console.error("Erreur lors de la récupération du bien:", error);
       } finally {
@@ -49,6 +51,79 @@ const Details = () => {
     };
     fetchBien();
   }, [id]);
+
+
+  const handleSendComment = async () => {
+    // Récupération des données d'authentification
+    // Note : On utilise 'userId' et 'userEmail' pour correspondre à ton stockage
+    const userId = localStorage.getItem('userid');
+    const token = localStorage.getItem('token');
+    const userEmail = localStorage.getItem('userEmail');
+
+    // 1. Vérification de la connexion
+    if (!userId || !token) {
+      alert("Vous devez être connecté pour publier un commentaire.");
+      navigate('/connexion');
+      return;
+    }
+
+    // 2. Validation du contenu local
+    if (!commentText.trim()) return;
+
+    try {
+      setSending(true);
+      // 'id' ici est l'ID de la publication (ex: "3")
+      const result = await CommentService.create(id, commentText);
+
+      if (result.success) {
+        // Ajout immédiat à la liste locale pour fluidité (formaté selon ton DTO)
+        const newComment = result.data;
+        setComments([newComment, ...comments]);
+        setCommentText("");
+      } else {
+        alert(result.error?.message || "Erreur lors de l'envoi");
+      }
+    } catch (error) {
+      console.error("Erreur envoi commentaire:", error);
+      alert("Une erreur réseau est survenue.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleLike = async (commentId) => {
+    const res = await CommentService.toggleLike(commentId);
+    if (res.success) {
+      // Mise à jour locale de la liste des commentaires pour refléter le like
+      setComments(prev => prev.map(c =>
+        c.id === commentId ? { ...c, liked: res.data.liked, likeCount: res.data.likeCount } : c
+      ));
+    }
+  };
+
+  const handleDelete = async (commentId) => {
+    if (!window.confirm("Supprimer ce commentaire ?")) return;
+    const res = await CommentService.delete(commentId);
+    if (res.success) {
+      // Si status est 'tombstoned', on garde l'élément mais on change le texte [cite: 158, 232]
+      setComments(prev => prev.map(c =>
+        c.id === commentId ? { ...c, status: 'tombstoned', content: "[Ce commentaire a été supprimé]" } : c
+      ));
+    }
+  };
+
+  const handleSendReply = async (parentId) => {
+    if (!replyText.trim()) return;
+    const res = await CommentService.reply(id, replyText, parentId);
+    if (res.success) {
+      // Ajouter la réponse à la liste locale du parent
+      setComments(prev => prev.map(c =>
+        c.id === parentId ? { ...c, replies: [...(c.replies || []), res.data], replyCount: c.replyCount + 1 } : c
+      ));
+      setReplyText("");
+      setReplyingTo(null);
+    }
+  };
 
   const nextImage = useCallback(() => {
     if (!bien?.images || bien.images.length === 0) return;
@@ -189,31 +264,127 @@ const Details = () => {
               </a>
             </div>
 
-            {/* Section Commentaires */}
+            {/* SECTION COMMENTAIRES DYNAMISÉE */}
             <div className="space-y-6">
-              <h3 className="font-bold text-xs uppercase text-gray-400 tracking-[0.2em] italic border-b border-gray-200 pb-4">Discussions récents</h3>
-              <div className="max-h-80 overflow-y-auto pr-3 space-y-6 scrollbar-thin">
-                {commentsList.map(c => (
-                  <div key={c.id} className="text-xs border-b border-white pb-4 italic last:border-0">
-                    <div className="flex justify-between font-bold text-gray-700 mb-2">
-                      <span className="text-sm">{c.user}</span>
-                      <span className="font-normal text-gray-300">{c.date}</span>
+              <h3 className="font-bold text-xs uppercase text-gray-400 tracking-[0.2em] italic border-b border-gray-200 pb-4">
+                Discussions ({comments.length})
+              </h3>
+
+              <div className="max-h-[500px] overflow-y-auto pr-3 space-y-6 scrollbar-thin">
+                {comments.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic text-center py-4">
+                    Aucun commentaire pour le moment.
+                  </p>
+                ) : (
+                  comments.map(c => (
+                    <div key={c.id} className="text-xs border-b border-white pb-6 italic last:border-0">
+                      <div className="flex justify-between font-bold text-gray-700 mb-2">
+                        <div className="flex flex-col">
+                          <span className="text-sm text-[#007b83]">
+                            {c.author.id === localStorage.getItem('userid')
+                              ? localStorage.getItem('userEmail')
+                              : `Utilisateur #${c.author.id.substring(0, 8)}`}
+                          </span>
+                        </div>
+                        <span className="font-normal text-gray-300">
+                          {new Date(c.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      <p className={`text-gray-500 leading-relaxed text-sm bg-white/30 p-3 rounded-lg ${c.status === 'tombstoned' ? 'opacity-50 italic' : ''}`}>
+                        {/* Le contenu affiche le message de suppression si le statut est tombstoned [cite: 158, 232] */}
+                        {c.status === 'tombstoned' ? "[Ce commentaire a été supprimé]" : `"${c.content}"`}
+                      </p>
+
+                      {/* BARRE D'ACTIONS : LIKE, RÉPONDRE, SUPPRIMER */}
+                      <div className="flex gap-6 mt-3 px-1 items-center text-[10px] font-black uppercase tracking-tighter">
+                        <button
+                          onClick={() => handleLike(c.id)}
+                          className={`flex items-center gap-1 transition-colors ${c.liked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+                        >
+                          <Heart size={12} fill={c.liked ? "currentColor" : "none"} /> {c.likeCount} LIKES
+                        </button>
+
+                        {/* Réponse autorisée uniquement sur les commentaires racines actifs [cite: 35, 112] */}
+                        {!c.parentId && c.status === 'active' && (
+                          <button
+                            onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
+                            className="flex items-center gap-1 text-gray-400 hover:text-[#007b83]"
+                          >
+                            <Reply size={12} /> Répondre
+                          </button>
+                        )}
+
+                        {/* Suppression autorisée uniquement pour l'auteur sur un commentaire actif  */}
+                        {c.author.id === localStorage.getItem('userid') && c.status === 'active' && (
+                          <button
+                            onClick={() => handleDelete(c.id)}
+                            className="flex items-center gap-1 text-gray-300 hover:text-red-600 ml-auto"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* FORMULAIRE DE RÉPONSE IMBRIQUÉ */}
+                      {replyingTo === c.id && (
+                        <div className="ml-6 mt-4 flex gap-2 animate-in slide-in-from-top-2">
+                          <input
+                            className="flex-1 border-b border-[#007b83] p-2 text-xs outline-none bg-transparent italic"
+                            placeholder="Écrire une réponse..."
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                          />
+                          <button
+                            onClick={() => handleSendReply(c.id)}
+                            disabled={!replyText.trim()}
+                            className="text-[#007b83] font-bold hover:scale-110 transition-transform disabled:opacity-30"
+                          >
+                            <Send size={14} />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* AFFICHAGE DES RÉPONSES EXISTANTES */}
+                      {c.replies && c.replies.length > 0 && (
+                        <div className="ml-6 mt-4 space-y-4 border-l-2 border-[#007b83]/10 pl-4">
+                          {c.replies.map(reply => (
+                            <div key={reply.id} className="opacity-80">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-[#007b83] font-bold">
+                                  {reply.author.id === localStorage.getItem('userid') ? "Moi" : "Réponse"}
+                                </span>
+                                <span className="text-[10px] text-gray-300">
+                                  {new Date(reply.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-gray-500 italic">"{reply.content}"</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <p className="text-gray-500 leading-relaxed text-sm">"{c.text}"</p>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
+              {/* FORMULAIRE DE COMMENTAIRE PRINCIPAL */}
               <div className="pt-4 space-y-4">
                 <textarea
-                  className="w-full border border-white p-4 text-sm rounded-xl outline-none focus:border-[#007b83] transition bg-white/60 italic"
+                  className="w-full border border-white p-4 text-sm rounded-xl outline-none focus:border-[#007b83] transition bg-white/60 italic shadow-inner"
                   placeholder="Écrire un commentaire..."
-                  rows="4"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
+                  rows="3"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  disabled={sending}
                 />
-                <button className="w-full bg-gray-800 text-white py-4 rounded-lg text-sm font-bold uppercase tracking-widest hover:bg-black transition-all">
-                  <Send size={16} className="inline mr-2" /> Envoyer
+                <button
+                  onClick={handleSendComment}
+                  disabled={sending || !commentText.trim()}
+                  className="w-full bg-gray-800 text-white py-4 rounded-xl text-sm font-bold uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg"
+                >
+                  {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                  {sending ? "Envoi..." : "Envoyer"}
                 </button>
               </div>
             </div>
