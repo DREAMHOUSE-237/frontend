@@ -82,7 +82,7 @@ const Inscription = () => {
 
             // Redirection après 3 secondes vers la page de connexion
             setTimeout(() => {
-                navigate('/connexion');
+                window.location.href = '/connexion';
             }, 3000);
 
         } catch (err) {
