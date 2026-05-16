@@ -4,7 +4,7 @@ import {
     Check, Eye, EyeOff, AlertCircle, Clock, ShieldCheck, XCircle, X
 } from 'lucide-react';
 
-import { getUserProfile, updateProfile, updatePassword, submitIdentity } from '../service/auth_service';
+import { getUserProfile, updateProfile, updatePassword } from '../service/auth_service';
 import { IdentityService } from '../service/auth_service';
 
 const ProfilePage = () => {
