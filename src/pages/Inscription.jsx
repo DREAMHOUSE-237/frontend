@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { User, Mail, Lock, Phone, MapPin, Upload, Briefcase, X, Eye, EyeOff, Loader2, CheckCircle } from 'lucide-react';
-import { registerUser, submitIdentity } from '../service/auth_service';
+import { User, Mail, Lock, Phone, MapPin, Upload, Briefcase, X, Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { registerUser, IdentityService } from '../service/auth_service';
 import { useNavigate } from 'react-router-dom';
 
 const Inscription = () => {
@@ -8,7 +8,7 @@ const Inscription = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
-    const [loading, setLoading] = useState(false); // État pour le loader
+    const [loading, setLoading] = useState(false); 
     const navigate = useNavigate();
    
     const [formData, setFormData] = useState({
@@ -34,58 +34,75 @@ const Inscription = () => {
 
     const handleRegister = async (e) => {
         e.preventDefault();
-        setLoading(true); // Activer le loader
+        setLoading(true); 
         setError(null);
 
-        try {
-            if (
-                (accountType === "proprietaire" || accountType === "agence") &&
-                (!cniRecto || !cniVerso)
-            ) {
-                alert("Veuillez ajouter les images recto et verso de la CNI");
-                setLoading(false);
-                return;
-            }
+        // 1. Validation locale pour les rôles nécessitant la CNI
+        if ((accountType === "proprietaire" || accountType === "agence") && (!cniRecto || !cniVerso)) {
+            setError("Veuillez ajouter les images recto et verso de la CNI.");
+            setLoading(false);
+            return;
+        }
 
+        try {
+            // 2. Inscription dans le USER-SERVICE (Données textuelles de profil)
             const userData = {
                 role: accountType,
                 email: formData.email,
                 password: formData.password,
                 nom: formData.nom,
                 prenom: formData.prenom,
-                tel: formData.tel,
-                ville: formData.ville,
-                region: formData.region
+                tel: accountType === 'admin' ? "" : formData.tel,
+                ville: accountType === 'admin' ? "" : formData.ville,
+                region: accountType === 'admin' ? "" : formData.region
             };
 
-            const registerResponse = await registerUser(userData);
+            await registerUser(userData);
 
+            // 3. Liaison avec l'IDENTITY-SERVICE si le rôle est éligible (Structure FormData pour fichiers)
             if (accountType === "proprietaire" || accountType === "agence") {
-                await submitIdentity(
-                    formData.email,
-                    accountType,
-                    cniRecto,
-                    cniVerso
-                );
+                const identityData = new FormData();
+                identityData.append('email', formData.email);
+                identityData.append('password', formData.password);
+                identityData.append('requested_role', accountType);
+                
+                if (cniRecto) identityData.append('cni_recto', cniRecto);
+                if (cniVerso) identityData.append('cni_verso', cniVerso);
+
+                // Appel de ton IdentityService d'analyse OCR
+                const ocrResult = await IdentityService.registerWithIdentity(identityData);
+                
+                if (ocrResult.status === 'verified') {
+                    console.log("✓ Identité vérifiée instantanément par le module OCR.");
+                }
             }
 
-            setSuccess(true); // Afficher le message de succès
-            setLoading(false); // Stopper le loader
+            setSuccess(true); 
+            setLoading(false); 
 
-            // Redirection après 3 secondes
+            // Redirection après 3 secondes vers la page de connexion
             setTimeout(() => {
                 navigate('/connexion');
             }, 3000);
 
-        } catch (error) {
-            console.error(error);
-            setLoading(false); // Stopper le loader
-            alert(error?.message || "Erreur lors de l'inscription");
+        } catch (err) {
+            console.error("Erreur lors de l'inscription croisée :", err);
+            setLoading(false); 
+            const backendMessage = err.response?.data?.error || err.message || "Erreur lors de l'inscription";
+            setError(backendMessage);
         }
     };
 
     return (
         <div className="w-full max-w-md mx-auto">
+            {/* Message d'erreur dynamique */}
+            {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl flex items-center gap-3 animate-in fade-in duration-300">
+                    <AlertCircle className="text-red-500" size={24} />
+                    <p className="font-bold text-sm">{error}</p>
+                </div>
+            )}
+
             {/* Message de succès */}
             {success && (
                 <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl flex items-center gap-3 animate-in fade-in zoom-in duration-300">
@@ -114,6 +131,7 @@ const Inscription = () => {
                             <option value="client">Client</option>
                             <option value="proprietaire">Propriétaire</option>
                             <option value="agence">Agence Immobilière</option>
+                            <option value="admin">Administrateur</option>
                         </select>
                     </div>
                 </div>
@@ -148,45 +166,50 @@ const Inscription = () => {
                     onChange={handleInputChange}
                 />
 
-                <InputGroup
-                    disabled={loading || success}
-                    icon={<Phone size={18} />}
-                    type="tel"
-                    placeholder="+237 6 XX XX XX XX"
-                    name="tel"
-                    value={formData.tel}
-                    onChange={handleInputChange}
-                />
+                {accountType !== 'admin' && (
+                    <>
+                        <InputGroup
+                            disabled={loading || success}
+                            icon={<Phone size={18} />}
+                            type="tel"
+                            placeholder="+237 6 XX XX XX XX"
+                            name="tel"
+                            value={formData.tel}
+                            onChange={handleInputChange}
+                        />
 
-                <InputGroup
-                    disabled={loading || success}
-                    icon={<MapPin size={18} />}
-                    placeholder="Ville"
-                    name="ville"
-                    value={formData.ville}
-                    onChange={handleInputChange}
-                />
+                        <InputGroup
+                            disabled={loading || success}
+                            icon={<MapPin size={18} />}
+                            placeholder="Ville"
+                            name="ville"
+                            value={formData.ville}
+                            onChange={handleInputChange}
+                        />
 
-                <InputGroup
-                    disabled={loading || success}
-                    icon={<MapPin size={18} />}
-                    placeholder="Sélectionnez votre région"
-                    name="region"
-                    as="select"
-                    value={formData.region}
-                    onChange={handleInputChange}
-                >
-                    <option value="adamaoua">Adamaoua</option>
-                    <option value="centre">Centre</option>
-                    <option value="est">Est</option>
-                    <option value="extreme_nord">Extrême-Nord</option>
-                    <option value="littoral">Littoral</option>
-                    <option value="nord">Nord</option>
-                    <option value="nord_ouest">Nord-Ouest</option>
-                    <option value="ouest">Ouest</option>
-                    <option value="sud">Sud</option>
-                    <option value="sud_ouest">Sud-Ouest</option>
-                </InputGroup>
+                        <InputGroup
+                            disabled={loading || success}
+                            icon={<MapPin size={18} />}
+                            placeholder="Sélectionnez votre région"
+                            name="region"
+                            as="select"
+                            value={formData.region}
+                            onChange={handleInputChange}
+                        >
+                            <option value="adamaoua">Adamaoua</option>
+                            <option value="centre">Centre</option>
+                            <option value="est">Est</option>
+                            <option value="extreme_nord">Extrême-Nord</option>
+                            <option value="littoral">Littoral</option>
+                            <option value="nord">Nord</option>
+                            <option value="nord_ouest">Nord-Ouest</option>
+                            <option value="ouest">Ouest</option>
+                            <option value="sud">Sud</option>
+                            <option value="sud_ouest">Sud-Ouest</option>
+                        </InputGroup>
+                    </>
+                )}
+
                 <InputGroup
                     disabled={loading || success}
                     icon={<Lock size={18} />}
@@ -209,7 +232,7 @@ const Inscription = () => {
                 {(accountType === "proprietaire" || accountType === "agence") && (
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-gray-600 uppercase ml-1">
-                            Documents d'identité (CNI)
+                            Documents d'identité (Obligatoire pour la validation)
                         </label>
 
                         <div className="grid grid-cols-2 gap-3">
@@ -236,7 +259,9 @@ const Inscription = () => {
                     {loading ? (
                         <>
                             <Loader2 className="animate-spin" size={20} />
-                            Inscription en cours...
+                            {accountType === 'proprietaire' || accountType === 'agence' 
+                                ? "Vérification OCR et Inscription..." 
+                                : "Inscription en cours..."}
                         </>
                     ) : (
                         "S'inscrire"
@@ -303,11 +328,8 @@ const UploadBox = ({
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
-            setFile(
-                Object.assign(selectedFile, {
-                    preview: URL.createObjectURL(selectedFile)
-                })
-            );
+            // On sauvegarde directement l'objet File brut requis par FormData
+            setFile(selectedFile);
         }
     };
 
@@ -324,7 +346,7 @@ const UploadBox = ({
             {!file ? (
                 <label
                     htmlFor={`upload-${label}`}
-                    className="h-full border-2 border-dashed border-gray-200 rounded-xl p-2 flex flex-col items-center justify-center cursor-pointer"
+                    className="h-full border-2 border-dashed border-gray-200 rounded-xl p-2 flex flex-col items-center justify-center cursor-pointer hover:border-[#007b83] hover:bg-teal-50/10 transition-all"
                 >
                     <Upload size={20} className="text-gray-400" />
                     <span className="text-[10px] font-bold text-gray-500 uppercase">
@@ -334,16 +356,20 @@ const UploadBox = ({
             ) : (
                 <div className="relative h-full w-full rounded-xl overflow-hidden border border-gray-200">
                     <img
-                        src={file.preview}
-                        alt="Aperçu"
+                        src={URL.createObjectURL(file)}
+                        alt="Aperçu CNI"
                         className="h-full w-full object-cover"
                     />
+                    <div className="absolute bottom-0 inset-x-0 bg-black/40 text-[8px] text-white p-1 truncate text-center font-mono">
+                        {file.name}
+                    </div>
                     <button
+                        type="button"
                         onClick={(e) => {
                             e.preventDefault();
                             setFile(null);
                         }}
-                        className="absolute top-1 right-1 bg-[#007b83] text-white rounded-full p-1"
+                        className="absolute top-1 right-1 bg-[#007b83] text-white rounded-full p-1 hover:bg-red-600 transition-colors"
                     >
                         <X size={12} />
                     </button>

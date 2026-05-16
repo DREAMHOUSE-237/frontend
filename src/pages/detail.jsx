@@ -105,7 +105,7 @@ const Details = () => {
     if (!window.confirm("Supprimer ce commentaire ?")) return;
     const res = await CommentService.delete(commentId);
     if (res.success) {
-      // Si status est 'tombstoned', on garde l'élément mais on change le texte [cite: 158, 232]
+      // Si status est 'tombstoned', on garde l'élément mais on change le texte
       setComments(prev => prev.map(c =>
         c.id === commentId ? { ...c, status: 'tombstoned', content: "[Ce commentaire a été supprimé]" } : c
       ));
@@ -292,7 +292,7 @@ const Details = () => {
                       </div>
 
                       <p className={`text-gray-500 leading-relaxed text-sm bg-white/30 p-3 rounded-lg ${c.status === 'tombstoned' ? 'opacity-50 italic' : ''}`}>
-                        {/* Le contenu affiche le message de suppression si le statut est tombstoned [cite: 158, 232] */}
+                        {/* Le contenu affiche le message de suppression si le statut est tombstoned  */}
                         {c.status === 'tombstoned' ? "[Ce commentaire a été supprimé]" : `"${c.content}"`}
                       </p>
 
@@ -305,7 +305,7 @@ const Details = () => {
                           <Heart size={12} fill={c.liked ? "currentColor" : "none"} /> {c.likeCount} LIKES
                         </button>
 
-                        {/* Réponse autorisée uniquement sur les commentaires racines actifs [cite: 35, 112] */}
+                        {/* Réponse autorisée uniquement sur les commentaires racines actifs */}
                         {!c.parentId && c.status === 'active' && (
                           <button
                             onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
@@ -321,7 +321,7 @@ const Details = () => {
                             onClick={() => handleDelete(c.id)}
                             className="flex items-center gap-1 text-gray-300 hover:text-red-600 ml-auto"
                           >
-                            <Trash2 size={12} />
+                            <Trash2 size={15} />
                           </button>
                         )}
                       </div>

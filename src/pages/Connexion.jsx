@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ShieldCheck } from 'lucide-react'; // ShieldCheck pour le style Identity
+import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import acc3 from '../assets/acc3.jpg';
 
-// Importation des nouveaux sous-composants
+// Importation des sous-composants
 import LoginForm from './Connexion2';
 import Inscription from './Inscription';
-import IdentityVerification from './Indetity';
 
 const AuthPage = () => {
     const navigate = useNavigate();
-    // Utilisation d'un état "mode" pour gérer les 3 vues
-    const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup' | 'identity'
+    // Gestion propre du mode 'login' ou 'signup'
+    const [authMode, setAuthMode] = useState('login'); 
 
     return (
         <div className="min-h-screen bg-white flex overflow-hidden font-sans">
@@ -30,28 +29,25 @@ const AuthPage = () => {
                             </div>
                         </div>
                         
-                        {/* Titres dynamiques selon le mode */}
+                        {/* Titres dynamiques */}
                         <h2 className="text-xl font-bold text-gray-800">
-                            {authMode === 'login' && "Bienvenue"}
-                            {authMode === 'signup' && "Créer un compte"}
-                            {authMode === 'identity' && "Vérification d'identité"}
+                            {authMode === 'login' ? "Bienvenue" : "Créer un compte"}
                         </h2>
                         <p className="text-sm text-gray-500 mt-1">
-                            {authMode === 'login' && "Connectez-vous pour explorer le monde"}
-                            {authMode === 'signup' && "Rejoignez-nous pour gérer vos biens"}
-                            {authMode === 'identity' && "Sécurisez votre profil pour publier des annonces"}
+                            {authMode === 'login' 
+                                ? "Connectez-vous pour explorer le monde" 
+                                : "Rejoignez-nous pour gérer vos biens"
+                            }
                         </p>
                     </div>
 
                     {/* Affichage conditionnel des sections */}
                     <div className="transition-all duration-300">
-                        {authMode === 'login' && <LoginForm />}
-                        {authMode === 'signup' && <Inscription />}
-                        {authMode === 'identity' && <IdentityVerification/>}
+                        {authMode === 'login' ? <LoginForm /> : <Inscription />}
                     </div>
 
-                    {/* Toggle entre les modes */}
-                    <div className="mt-8 space-y-4">
+                    {/* Toggle entre Connexion et Inscription */}
+                    <div className="mt-8">
                         <p className="text-center text-sm text-gray-400 font-medium">
                             {authMode === 'login' ? "Vous n'avez pas de compte ?" : "Vous avez déjà un compte ?"} 
                             <span 
@@ -61,23 +57,6 @@ const AuthPage = () => {
                                 {authMode === 'login' ? "Inscrivez-vous" : "Connectez-vous"}
                             </span>
                         </p>
-
-                        {/* Bouton rapide pour accéder à la vérification (Identity) */}
-                        {authMode !== 'identity' ? (
-                            <button 
-                                onClick={() => setAuthMode('identity')}
-                                className="w-full flex items-center justify-center gap-2 text-xs font-bold text-gray-400 hover:text-[#ff8800] transition-colors border-t border-gray-100 pt-4"
-                            >
-                                <ShieldCheck size={16} /> Besoin de vérifier votre identité ?
-                            </button>
-                        ) : (
-                            <button 
-                                onClick={() => setAuthMode('login')}
-                                className="w-full text-center text-xs font-bold text-[#007b83] hover:underline"
-                            >
-                                Retour à la connexion
-                            </button>
-                        )}
                     </div>
                 </div>
                 
@@ -101,13 +80,10 @@ const AuthPage = () => {
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"></div>
                 <div className="absolute bottom-20 left-16 right-16">
                     <h2 className="text-5xl font-bold text-white leading-tight mb-4">
-                        {authMode === 'identity' ? "Sécurisez votre \n futur." : "L'excellence \n n'attend pas."}
+                        L'excellence <br /> n'attend pas.
                     </h2>
                     <p className="text-white/80 text-lg font-light max-w-md border-l-2 border-[#007b83] pl-4">
-                        {authMode === 'identity' 
-                            ? "La vérification d'identité renforce la confiance entre propriétaires et locataires."
-                            : "Rejoignez la communauté Dreamhouse et faites briller vos annonces immobilières."
-                        }
+                        Rejoignez la communauté Dreamhouse et faites briller vos annonces immobilières.
                     </p>
                 </div>
             </div>

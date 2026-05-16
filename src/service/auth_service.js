@@ -241,41 +241,6 @@ export const registerUser = async (userData) => {
     }
 };
 
-export const submitIdentity = async (
-    email,
-    requested_role,
-    cniRecto,
-    cniVerso
-) => {
-
-    try {
-
-        const formData = new FormData();
-
-        formData.append("email", email);
-        formData.append("requested_role", requested_role);
-
-        if (cniRecto) {
-            formData.append("cni_recto", cniRecto);
-        }
-
-        if (cniVerso) {
-            formData.append("cni_verso", cniVerso);
-        }
-
-        const response = await axios.post(
-            `${API_URL}/IDENTITTY/submit/`,
-            formData
-        );
-
-        return response.data;
-
-    } catch (error) {
-
-        console.error("Erreur identité :", error);
-        throw error.response?.data || error;
-    }
-};
 
 export const getPendingIdentities = async () => {
 
