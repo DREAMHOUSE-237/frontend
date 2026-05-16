@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin, DollarSign, Key, Calendar, Users,
   MessageSquare, Send, User,
@@ -7,9 +7,8 @@ import {
   ChevronLeft, ChevronRight, X, Heart, Trash2, Reply
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
-import { getPublicationById } from '../service/auth_service';
-import { BienService, CommentService } from '../service/auth_service';
-import { useNavigate } from 'react-router-dom'
+import { getPublicationById, BienService, CommentService } from '../service/auth_service';
+
 const Details = () => {
   const { id } = useParams();
   const [bien, setBien] = useState(null);
@@ -25,14 +24,12 @@ const Details = () => {
   const [replyText, setReplyText] = useState("");
   const navigate = useNavigate();
 
-
   useEffect(() => {
     const fetchBien = async () => {
       try {
         setLoading(true);
         const data = await getPublicationById(id);
 
-        // Récupération dynamique stricte depuis le backend (clés : lattitude, longitude)
         if (data.lattitude && data.longitude) {
           setCoords({
             lat: parseFloat(data.lattitude),
@@ -52,33 +49,34 @@ const Details = () => {
     fetchBien();
   }, [id]);
 
+  // Déclencheur global pour forcer le rafraîchissement de la carte Leaflet lors du plein écran
+  useEffect(() => {
+    if (isMapMaximized) {
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isMapMaximized]);
 
   const handleSendComment = async () => {
-    // Récupération des données d'authentification
-    // Note : On utilise 'userId' et 'userEmail' pour correspondre à ton stockage
     const userId = localStorage.getItem('userid');
     const token = localStorage.getItem('token');
-    const userEmail = localStorage.getItem('userEmail');
 
-    // 1. Vérification de la connexion
     if (!userId || !token) {
       alert("Vous devez être connecté pour publier un commentaire.");
       navigate('/connexion');
       return;
     }
 
-    // 2. Validation du contenu local
     if (!commentText.trim()) return;
 
     try {
       setSending(true);
-      // 'id' ici est l'ID de la publication (ex: "3")
       const result = await CommentService.create(id, commentText);
 
       if (result.success) {
-        // Ajout immédiat à la liste locale pour fluidité (formaté selon ton DTO)
-        const newComment = result.data;
-        setComments([newComment, ...comments]);
+        setComments([result.data, ...comments]);
         setCommentText("");
       } else {
         alert(result.error?.message || "Erreur lors de l'envoi");
@@ -94,7 +92,6 @@ const Details = () => {
   const handleLike = async (commentId) => {
     const res = await CommentService.toggleLike(commentId);
     if (res.success) {
-      // Mise à jour locale de la liste des commentaires pour refléter le like
       setComments(prev => prev.map(c =>
         c.id === commentId ? { ...c, liked: res.data.liked, likeCount: res.data.likeCount } : c
       ));
@@ -105,7 +102,6 @@ const Details = () => {
     if (!window.confirm("Supprimer ce commentaire ?")) return;
     const res = await CommentService.delete(commentId);
     if (res.success) {
-      // Si status est 'tombstoned', on garde l'élément mais on change le texte
       setComments(prev => prev.map(c =>
         c.id === commentId ? { ...c, status: 'tombstoned', content: "[Ce commentaire a été supprimé]" } : c
       ));
@@ -116,9 +112,8 @@ const Details = () => {
     if (!replyText.trim()) return;
     const res = await CommentService.reply(id, replyText, parentId);
     if (res.success) {
-      // Ajouter la réponse à la liste locale du parent
       setComments(prev => prev.map(c =>
-        c.id === parentId ? { ...c, replies: [...(c.replies || []), res.data], replyCount: c.replyCount + 1 } : c
+        c.id === parentId ? { ...c, replies: [...(c.replies || []), res.data], replyCount: (c.replyCount || 0) + 1 } : c
       ));
       setReplyText("");
       setReplyingTo(null);
@@ -144,6 +139,7 @@ const Details = () => {
     <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor: '#f8f6f2' }}>
       <div className="max-w-screen-2xl mx-auto p-4 md:p-10 font-sans text-gray-800">
 
+        {/* Lightbox Galerie Plein Écran */}
         {showLightbox && (
           <div className="fixed inset-0 z-[100000] bg-black/95 flex items-center justify-center p-4">
             <button onClick={() => setShowLightbox(false)} className="absolute top-6 right-6 text-white/70 hover:text-white"><X size={40} /></button>
@@ -153,10 +149,26 @@ const Details = () => {
           </div>
         )}
 
+        {/* Mode Maximisé de la carte */}
+        {isMapMaximized && coords && (
+          <div className="fixed inset-0 z-[200000] bg-white w-screen h-screen">
+            <button
+              onClick={() => setIsMapMaximized(false)}
+              className="absolute top-6 right-6 z-[200005] bg-gray-900 text-white p-3 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center justify-center"
+            >
+              <Minimize2 size={24} />
+            </button>
+            <div className="w-full h-full">
+              <LocationPicker mapPosition={coords} readOnly={true} />
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+          {/* ZONE GAUCHE */}
           <div className="lg:col-span-8 space-y-10">
 
-            {/* Galerie */}
+            {/* GALERIE D'IMAGES — FIXE EN RELATIVE */}
             <div className="space-y-4">
               <div className="relative group overflow-hidden rounded-xl bg-gray-200 aspect-[16/9] shadow-sm">
                 <img
@@ -164,13 +176,24 @@ const Details = () => {
                   className="w-full h-full object-cover transition-all duration-700"
                   alt={bien.titreBien}
                 />
-                <div className="absolute inset-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={prevImage} className="p-3 bg-white/80 rounded-full shadow"><ChevronLeft size={24} /></button>
-                  <button onClick={nextImage} className="p-3 bg-white/80 rounded-full shadow"><ChevronRight size={24} /></button>
+                
+                {/* Flèches de navigation au survol */}
+                <div className="absolute inset-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+                  <button onClick={prevImage} className="p-3 bg-white/80 rounded-full shadow pointer-events-auto hover:bg-white"><ChevronLeft size={24} /></button>
+                  <button onClick={nextImage} className="p-3 bg-white/80 rounded-full shadow pointer-events-auto hover:bg-white"><ChevronRight size={24} /></button>
                 </div>
-                <button onClick={() => setShowLightbox(true)} className="absolute bottom-6 right-6 bg-black/50 text-white p-3 rounded"><Maximize2 size={22} /></button>
+                
+                {/* FIX DU BOUTON AGRANDIR IMAGE : Raccroché proprement au conteneur de l'image */}
+                <button 
+                  onClick={() => setShowLightbox(true)} 
+                  className="absolute bottom-6 right-6 bg-black/60 text-white p-3 rounded-xl hover:bg-black transition-colors z-20 flex items-center justify-center shadow-lg"
+                  title="Agrandir l'image"
+                >
+                  <Maximize2 size={20} />
+                </button>
               </div>
 
+              {/* Miniatures */}
               <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
                 {images.map((img, i) => (
                   <img
@@ -200,11 +223,10 @@ const Details = () => {
               <InfoLine icon={<Home size={18} />} label="Type Bien Immobilier" value={bien.typeBienImmobilier} />
               <InfoLine icon={<Calendar size={18} />} label="Catégorie" value={bien.categorie} />
               <InfoLine icon={<Users size={18} />} label="Pièces" value={bien.nbrePiece} />
-
             </div>
 
-            {/* Description dynamique */}
-            <div className="pt-8 space-y-6">
+            {/* Description du Bien */}
+            <div className="space-y-6">
               <h3 className="text-center text-gray-400 text-sm uppercase tracking-[0.3em] italic font-bold">Description du Bien</h3>
               <div className="text-base text-gray-600 leading-relaxed max-w-3xl mx-auto text-center italic">
                 <p className="whitespace-pre-line bg-white/40 p-6 rounded-2xl border border-white/20">
@@ -214,18 +236,19 @@ const Details = () => {
             </div>
           </div>
 
+          {/* ZONE DROITE */}
           <div className="lg:col-span-4 space-y-12">
 
-            {/* Carte 100% Dynamique */}
-            <div className={isMapMaximized ? 'fixed inset-0 z-[100000] bg-white' : 'relative h-80 z-10'}>
-              <div className={`relative h-full w-full ${isMapMaximized ? '' : 'rounded-3xl shadow-xl overflow-hidden border-4 border-white'}`}>
+            {/* Carte Standard Miniature */}
+            <div className="relative h-80 z-10">
+              <div className="relative h-full w-full rounded-3xl shadow-xl overflow-hidden border-4 border-white">
                 <button
-                  onClick={() => setIsMapMaximized(!isMapMaximized)}
-                  className="absolute top-4 right-4 z-[100001] bg-white p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
+                  onClick={() => setIsMapMaximized(true)}
+                  className="absolute top-4 right-4 z-[50] bg-white text-gray-800 p-2.5 rounded-full shadow-lg hover:scale-110 transition-transform flex items-center justify-center"
                 >
-                  {isMapMaximized ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+                  <Maximize2 size={18} />
                 </button>
-                {coords && (
+                {coords && !isMapMaximized && (
                   <LocationPicker
                     mapPosition={coords}
                     readOnly={true}
@@ -234,15 +257,12 @@ const Details = () => {
               </div>
             </div>
 
-            {/* Contact */}
             {/* Section Contact Responsable */}
             <div className="border border-white bg-white/80 rounded-3xl p-8 text-center space-y-6 shadow-md">
               <div className="w-20 h-20 bg-gray-100 rounded-full mx-auto flex items-center justify-center border border-white shadow-inner">
                 <User size={40} className="text-[#007b83]" />
               </div>
-
               <div>
-                {/* Nom remplacé par "Responsable du bien" */}
                 <h3 className="font-bold text-xl italic uppercase tracking-tighter text-gray-900">
                   Responsable du bien
                 </h3>
@@ -250,8 +270,6 @@ const Details = () => {
                   Réponse rapide
                 </p>
               </div>
-
-              {/* Lien WhatsApp avec message prédéfini dynamique */}
               <a
                 href={`https://wa.me/+237${bien.numeroPaiement?.replace(/\s+/g, '')}?text=${encodeURIComponent(
                   `Bonjour, je suis intéressé par votre annonce "${bien.titreBien}" située à ${bien.quartier} (${bien.prix} FCFA). Est-elle toujours disponible ?`
@@ -264,7 +282,7 @@ const Details = () => {
               </a>
             </div>
 
-            {/* SECTION COMMENTAIRES DYNAMISÉE */}
+            {/* SECTION COMMENTAIRES */}
             <div className="space-y-6">
               <h3 className="font-bold text-xs uppercase text-gray-400 tracking-[0.2em] italic border-b border-gray-200 pb-4">
                 Discussions ({comments.length})
@@ -279,24 +297,20 @@ const Details = () => {
                   comments.map(c => (
                     <div key={c.id} className="text-xs border-b border-white pb-6 italic last:border-0">
                       <div className="flex justify-between font-bold text-gray-700 mb-2">
-                        <div className="flex flex-col">
-                          <span className="text-sm text-[#007b83]">
-                            {c.author.id === localStorage.getItem('userid')
-                              ? localStorage.getItem('userEmail')
-                              : `Utilisateur #${c.author.id.substring(0, 8)}`}
-                          </span>
-                        </div>
+                        <span className="text-sm text-[#007b83]">
+                          {c.author.id === localStorage.getItem('userid')
+                            ? localStorage.getItem('userEmail')
+                            : `Utilisateur #${c.author.id.substring(0, 8)}`}
+                        </span>
                         <span className="font-normal text-gray-300">
                           {new Date(c.createdAt).toLocaleDateString()}
                         </span>
                       </div>
 
                       <p className={`text-gray-500 leading-relaxed text-sm bg-white/30 p-3 rounded-lg ${c.status === 'tombstoned' ? 'opacity-50 italic' : ''}`}>
-                        {/* Le contenu affiche le message de suppression si le statut est tombstoned  */}
                         {c.status === 'tombstoned' ? "[Ce commentaire a été supprimé]" : `"${c.content}"`}
                       </p>
 
-                      {/* BARRE D'ACTIONS : LIKE, RÉPONDRE, SUPPRIMER */}
                       <div className="flex gap-6 mt-3 px-1 items-center text-[10px] font-black uppercase tracking-tighter">
                         <button
                           onClick={() => handleLike(c.id)}
@@ -305,8 +319,7 @@ const Details = () => {
                           <Heart size={12} fill={c.liked ? "currentColor" : "none"} /> {c.likeCount} LIKES
                         </button>
 
-                        {/* Réponse autorisée uniquement sur les commentaires racines actifs */}
-                        {!c.parentId && c.status === 'active' && (
+                        {(!c.parentId || c.parentId === null) && c.status !== 'tombstoned' && (
                           <button
                             onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
                             className="flex items-center gap-1 text-gray-400 hover:text-[#007b83]"
@@ -315,8 +328,7 @@ const Details = () => {
                           </button>
                         )}
 
-                        {/* Suppression autorisée uniquement pour l'auteur sur un commentaire actif  */}
-                        {c.author.id === localStorage.getItem('userid') && c.status === 'active' && (
+                        {c.author.id === localStorage.getItem('userid') && c.status !== 'tombstoned' && (
                           <button
                             onClick={() => handleDelete(c.id)}
                             className="flex items-center gap-1 text-gray-300 hover:text-red-600 ml-auto"
@@ -326,26 +338,24 @@ const Details = () => {
                         )}
                       </div>
 
-                      {/* FORMULAIRE DE RÉPONSE IMBRIQUÉ */}
                       {replyingTo === c.id && (
                         <div className="ml-6 mt-4 flex gap-2 animate-in slide-in-from-top-2">
                           <input
                             className="flex-1 border-b border-[#007b83] p-2 text-xs outline-none bg-transparent italic"
-                            placeholder="Écrire une réponse..."
+                            placeholder="Répondre..."
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                           />
                           <button
                             onClick={() => handleSendReply(c.id)}
                             disabled={!replyText.trim()}
-                            className="text-[#007b83] font-bold hover:scale-110 transition-transform disabled:opacity-30"
+                            className="text-[#007b83] font-bold"
                           >
                             <Send size={14} />
                           </button>
                         </div>
                       )}
 
-                      {/* AFFICHAGE DES RÉPONSES EXISTANTES */}
                       {c.replies && c.replies.length > 0 && (
                         <div className="ml-6 mt-4 space-y-4 border-l-2 border-[#007b83]/10 pl-4">
                           {c.replies.map(reply => (
@@ -368,7 +378,7 @@ const Details = () => {
                 )}
               </div>
 
-              {/* FORMULAIRE DE COMMENTAIRE PRINCIPAL */}
+              {/* Écrire un commentaire */}
               <div className="pt-4 space-y-4">
                 <textarea
                   className="w-full border border-white p-4 text-sm rounded-xl outline-none focus:border-[#007b83] transition bg-white/60 italic shadow-inner"
