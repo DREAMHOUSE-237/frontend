@@ -34,12 +34,14 @@ const ProfilePage = () => {
         region: '',
         photo: null,
         is_active: false,
-        identityStatus: null, // null/'none', 'pending', 'verified', 'rejected'
+        identityStatus: null, 
         rejectionReason: ''
     });
 
-    // Vérification stricte si le rôle nécessite et est éligible aux CNI
-    const isEligibleForIdentity = ['proprietaire', 'agence', 'agent'].includes(profile.role?.toLowerCase());
+    // On normalise la vérification du rôle (qu'il soit pending_proprietaire ou proprietaire, il est éligible à l'identité)
+    const isEligibleForIdentity = ['proprietaire', 'agence', 'agent', 'pending_proprietaire', 'pending_agence'].some(
+        r => profile.role?.toLowerCase()?.includes(r)
+    );
 
     useEffect(() => {
         fetchFullProfile();
@@ -47,25 +49,37 @@ const ProfilePage = () => {
 
     const fetchFullProfile = async () => {
         setLoading(true);
-        const storedRole = localStorage.getItem('role') || 'Utilisateur';
         try {
+            // 1. Récupérer les infos en temps réel depuis le USER-SERVICE
             const userData = await getUserProfile();
             const nameParts = userData.username ? userData.username.split(' ') : ['', ''];
+            
+            // On extrait le rôle renvoyé par l'API (plus fiable que le localStorage)
+            const currentRole = userData.role || localStorage.getItem('role') || 'Utilisateur';
 
             let idStatus = null;
             let rejectMsg = '';
 
-            // On ne check le statut d'identité que si le rôle local requiert une vérification
-            if (['proprietaire', 'agence', 'agent'].includes(storedRole.toLowerCase())) {
+            // 2. On vérifie le statut d'identité si le rôle requiert une validation
+            if (['proprietaire', 'agence', 'agent', 'pending_proprietaire', 'pending_agence'].some(r => currentRole.toLowerCase().includes(r))) {
                 try {
                     const statusResponse = await IdentityService.checkMyStatus(userData.email);
-                    idStatus = statusResponse.status;
+                    idStatus = statusResponse.status; // 'verified', 'pending', 'rejected'
                     rejectMsg = statusResponse.rejection_reason || '';
+                    
+                    // Sécurité : Si l'identité est validée côté Identity-Service, on met à jour localement 
+                    // pour forcer l'affichage vert même si le rôle USER-SERVICE met du temps à se propager
+                    if (statusResponse.status === 'verified') {
+                        userData.is_active = true; 
+                    }
                 } catch (err) {
-                    console.log("Identity-Service: Aucun dossier d'identité trouvé pour ce profil.");
+                    console.log("Identity-Service: Aucun dossier trouvé.");
                     idStatus = 'none';
                 }
             }
+
+            // Mettre à jour le localStorage pour les autres composants de l'application
+            localStorage.setItem('role', currentRole);
 
             setProfile({
                 ...userData,
@@ -73,7 +87,7 @@ const ProfilePage = () => {
                 prenom: nameParts.slice(1).join(' ') || '',
                 identityStatus: idStatus,
                 rejectionReason: rejectMsg,
-                role: storedRole,
+                role: currentRole,
                 contact: userData.tel || userData.contact || ''
             });
         } catch (error) {
@@ -119,7 +133,13 @@ const ProfilePage = () => {
 
         try {
             setSubmitLoading(true);
-            await submitIdentity(profile.email, profile.role.toLowerCase(), cniRecto, cniVerso);
+            const identityData = new FormData();
+            identityData.append('email', profile.email);
+            identityData.append('requested_role', profile.role.toLowerCase().replace('pending_', ''));
+            if (cniRecto) identityData.append('cni_recto', cniRecto);
+            if (cniVerso) identityData.append('cni_verso', cniVerso);
+
+            await IdentityService.registerWithIdentity(identityData);
             alert("Documents d'identité téléversés avec succès !");
             setIsModalOpen(false);
             fetchFullProfile();
@@ -140,6 +160,16 @@ const ProfilePage = () => {
     };
 
     if (loading) return <div className="flex justify-center items-center h-screen italic text-gray-400">Chargement de votre espace...</div>;
+
+    // Formatage propre du rôle pour l'affichage (ex: PENDING_PROPRIETAIRE devient PROPRIÉTAIRE (En attente))
+    const formatDisplayRole = (role) => {
+        if (!role) return 'Utilisateur';
+        const r = role.toUpperCase();
+        if (r.startsWith('PENDING_')) {
+            return `${r.replace('PENDING_', '')} (EN ATTENTE)`;
+        }
+        return r;
+    };
 
     return (
         <div className="min-h-screen bg-gray-50/50 flex flex-col font-sans text-gray-900">
@@ -170,34 +200,35 @@ const ProfilePage = () => {
                             <span className="text-sm text-gray-500 font-medium">{profile.email}</span>
                             <span className="w-1 h-1 bg-gray-300 rounded-full hidden md:block"></span>
                             <span className="px-3 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase rounded-full tracking-wider">
-                                {profile.role || 'Utilisateur'}
+                                {formatDisplayRole(profile.role)}
                             </span>
                         </div>
 
-                        {/* GRILLE DE STATUS CONDITIONNELLE */}
-                        {/* GRILLE DE STATUS CONDITIONNELLE */}
+                        {/* GRILLE DE STATUS CONDITIONNELLE HARMONISÉE */}
                         <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-3">
 
-                            {/* 1. Affichage pour le CLIENT : Uniquement le statut du compte utilisateur */}
                             {profile.role?.toLowerCase() === 'client' ? (
                                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white border text-green-700 border-green-200">
                                     <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                                     Compte Actif
                                 </div>
                             ) : (
-                                /* 2. Affichage pour PROPRIÉTAIRE et AGENCE : Statut de compte + Statut de vérification d'identité */
                                 <>
-                                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white border ${profile.is_active ? "text-green-700 border-green-200" : "text-red-700 border-red-200"
-                                        }`}>
-                                        <div className={`w-1.5 h-1.5 rounded-full ${profile.is_active ? "bg-green-500" : "bg-red-500"}`}></div>
-                                        {profile.is_active ? "Compte Actif" : "Compte Inactif"}
+                                    {/* Compte Actif/Inactif basé sur is_active global ou statut d'identité */}
+                                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white border ${
+                                        profile.is_active || profile.identityStatus === 'verified' ? "text-green-700 border-green-200" : "text-red-700 border-red-200"
+                                    }`}>
+                                        <div className={`w-1.5 h-1.5 rounded-full ${profile.is_active || profile.identityStatus === 'verified' ? "bg-green-500" : "bg-red-500"}`}></div>
+                                        {profile.is_active || profile.identityStatus === 'verified' ? "Compte Actif" : "Compte Inactif"}
                                     </div>
 
-                                    {profile.identityStatus && profile.identityStatus !== 'none' && (
-                                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white border ${profile.identityStatus === 'verified' ? "text-blue-700 border-blue-200" :
+                                    {/* Badge Identity lié à l'Identity-Service ou au préfixe PENDING */}
+                                    {profile.identityStatus && (
+                                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white border ${
+                                            profile.identityStatus === 'verified' ? "text-blue-700 border-blue-200" :
                                             profile.identityStatus === 'rejected' ? "text-red-700 border-red-200" :
-                                                "text-amber-700 border-amber-200"
-                                            }`}>
+                                            "text-amber-700 border-amber-200"
+                                        }`}>
                                             {profile.identityStatus === 'verified' ? <ShieldCheck size={14} /> :
                                                 profile.identityStatus === 'rejected' ? <XCircle size={14} /> : <Clock size={14} />}
                                             {profile.identityStatus === 'verified' ? "Identité Vérifiée" :
@@ -207,7 +238,7 @@ const ProfilePage = () => {
                                 </>
                             )}
 
-                            {/* Bouton d'action d'envoi CNI : Strictement réservé aux partenaires non vérifiés */}
+                            {/* Bouton d'action de soumission */}
                             {isEligibleForIdentity && (!profile.identityStatus || profile.identityStatus === 'none') && (
                                 <button
                                     onClick={() => setIsModalOpen(true)}
@@ -218,7 +249,7 @@ const ProfilePage = () => {
                             )}
                         </div>
 
-                        {/* Bloc Message de Rejet : Masqué pour les clients */}
+                        {/* Bloc Message de Rejet */}
                         {isEligibleForIdentity && profile.identityStatus === 'rejected' && (
                             <div className="mt-4 flex flex-col md:flex-row gap-3 items-center md:items-start animate-in fade-in duration-300">
                                 <div className="inline-flex items-center gap-2 text-red-600 bg-red-50 px-3 py-2 rounded-xl border border-red-100">
@@ -245,8 +276,7 @@ const ProfilePage = () => {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`pb-4 text-sm font-bold transition-all relative ${activeTab === tab.id ? 'text-[#1a2b3c]' : 'text-gray-400 hover:text-gray-600'
-                                }`}
+                            className={`pb-4 text-sm font-bold transition-all relative ${activeTab === tab.id ? 'text-[#1a2b3c]' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                             {tab.label}
                             {activeTab === tab.id && (
@@ -374,7 +404,7 @@ const ProfilePage = () => {
                 </div>
             </div>
 
-            {/* LA MODALE : S'affiche uniquement pour les rôles éligibles si ouverte */}
+            {/* MODALE CNI */}
             {isModalOpen && isEligibleForIdentity && (
                 <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
                     <div className="bg-white rounded-[32px] max-w-lg w-full overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
@@ -390,7 +420,6 @@ const ProfilePage = () => {
 
                         <form onSubmit={handleCniSubmit} className="p-6 space-y-6">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {/* RECTO BOX */}
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">CNI — Face Recto</label>
                                     <div className="relative h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100/50 transition-colors cursor-pointer overflow-hidden">
@@ -410,7 +439,6 @@ const ProfilePage = () => {
                                     </div>
                                 </div>
 
-                                {/* VERSO BOX */}
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">CNI — Face Verso</label>
                                     <div className="relative h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100/50 transition-colors cursor-pointer overflow-hidden">
