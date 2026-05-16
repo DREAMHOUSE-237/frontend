@@ -323,7 +323,7 @@ export const updateProfile = async (profileData) => {
         const userId = localStorage.getItem("userId");
 
         const response = await axios.patch(
-            `${API_URL}/USER-SERVICE/users/users/${userId}/modification/`,
+            `${API_URL}/USER-SERVICE/users/user/${userId}/modification/`,
             profileData, 
             {
                 headers: {
@@ -348,7 +348,7 @@ export const updatePassword = async (current_password, new_password) => {
         const userId = localStorage.getItem("userId");
 
         const response = await axios.patch(
-            `${API_URL}/USER-SERVICE/users/profiles/${userId}/`,
+            `${API_URL}/USER-SERVICE/users/user/${userId}/modification/`,
             {
                 current_password: current_password,
                 new_password: new_password

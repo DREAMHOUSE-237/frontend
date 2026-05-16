@@ -1,23 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     Camera, User, Mail, Phone, Shield, Upload,
-    Check, Eye, EyeOff, AlertCircle, Clock, ShieldCheck, XCircle, X
+    Check, AlertCircle, Clock, ShieldCheck, XCircle, X
 } from 'lucide-react';
 
-import { getUserProfile, updateProfile, updatePassword } from '../service/auth_service';
+import { getUserProfile } from '../service/auth_service';
 import { IdentityService } from '../service/auth_service';
 
 const ProfilePage = () => {
     const fileInputRef = useRef(null);
-    const [activeTab, setActiveTab] = useState('info');
 
     // États techniques
     const [loading, setLoading] = useState(true);
     const [submitLoading, setSubmitLoading] = useState(false);
-    const [showCurrentPass, setShowCurrentPass] = useState(false);
-    const [showNewPass, setShowNewPass] = useState(false);
-    const [passwordData, setPasswordData] = useState({ current_password: '', new_password: '' });
-
+    
     // État pour la modale CNI
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [cniRecto, setCniRecto] = useState(null);
@@ -93,35 +89,13 @@ const ProfilePage = () => {
         } catch (error) {
             console.error("Erreur globale profil:", error);
         } finally {
-            setLoading(false);
+            fetchPhotoChange();
         }
     };
 
-    const handleUpdateProfile = async () => {
-        const cleanData = {
-            username: `${profile.nom} ${profile.prenom}`,
-            tel: profile.contact,
-            ville: profile.ville,
-            region: profile.region
-        };
-
-        try {
-            await updateProfile(cleanData);
-            alert("Profil mis à jour avec succès !");
-        } catch (e) {
-            console.error("Erreur mise à jour:", e);
-            alert("Erreur lors de la sauvegarde.");
-        }
-    };
-
-    const handleUpdatePassword = async () => {
-        try {
-            await updatePassword(passwordData.current_password, passwordData.new_password);
-            alert("Mot de passe modifié !");
-            setPasswordData({ current_password: '', new_password: '' });
-        } catch (error) {
-            alert("Erreur de mot de passe actuel.");
-        }
+    // Ajustement de la fin du chargement
+    const fetchPhotoChange = () => {
+        setLoading(false);
     };
 
     const handleCniSubmit = async (e) => {
@@ -161,12 +135,12 @@ const ProfilePage = () => {
 
     if (loading) return <div className="flex justify-center items-center h-screen italic text-gray-400">Chargement de votre espace...</div>;
 
-    // Formatage propre du rôle pour l'affichage (ex: PENDING_PROPRIETAIRE devient PROPRIÉTAIRE (En attente))
+    // Formatage propre du rôle pour l'affichage (ex: PENDING_PROPRIETAIRE devient PROPRIÉTAIRE)
     const formatDisplayRole = (role) => {
         if (!role) return 'Utilisateur';
         const r = role.toUpperCase();
         if (r.startsWith('PENDING_')) {
-            return `${r.replace('PENDING_', '')} (EN ATTENTE)`;
+            return `${r.replace('PENDING_', '')}`;
         }
         return r;
     };
@@ -238,7 +212,7 @@ const ProfilePage = () => {
                                 </>
                             )}
 
-                            {/* Bouton d'action de soumission */}
+                            {/* Bouton d'action de soumission CNI */}
                             {isEligibleForIdentity && (!profile.identityStatus || profile.identityStatus === 'none') && (
                                 <button
                                     onClick={() => setIsModalOpen(true)}
@@ -267,140 +241,67 @@ const ProfilePage = () => {
                     </div>
                 </div>
 
-                {/* TABS NAVIGATION */}
-                <div className="flex items-center gap-8 border-b border-gray-200/60 mb-8">
-                    {[
-                        { id: 'info', label: 'Informations personnelles' },
-                        { id: 'security', label: 'Sécurité' }
-                    ].map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`pb-4 text-sm font-bold transition-all relative ${activeTab === tab.id ? 'text-[#1a2b3c]' : 'text-gray-400 hover:text-gray-600'}`}
-                        >
-                            {tab.label}
-                            {activeTab === tab.id && (
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#007b83] rounded-t-full" />
-                            )}
-                        </button>
-                    ))}
-                </div>
-
-                {/* FORM PANEL */}
+                {/* FORM PANEL (AFFICHAGE DIRECT DES INFORMATIONS SANS SÉCURITÉ NI BOUTON) */}
                 <div className="pb-20">
-                    {activeTab === 'info' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-3 duration-300">
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black uppercase text-gray-400 ml-2">Nom</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-3 duration-300">
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-black uppercase text-gray-400 ml-2">Nom</label>
+                            <input
+                                readOnly
+                                type="text"
+                                value={profile.nom}
+                                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none font-medium cursor-default text-gray-600"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-black uppercase text-gray-400 ml-2">Prénom</label>
+                            <input
+                                readOnly
+                                type="text"
+                                value={profile.prenom}
+                                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none font-medium cursor-default text-gray-600"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-black uppercase text-gray-400 ml-2">Email</label>
+                            <div className="relative">
                                 <input
-                                    type="text"
-                                    value={profile.nom}
-                                    onChange={(e) => setProfile({ ...profile, nom: e.target.value })}
-                                    className="w-full p-4 bg-gray-50 focus:bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#007b83]/20 transition-all outline-none font-medium"
+                                    readOnly
+                                    type="email"
+                                    value={profile.email}
+                                    className="w-full p-4 bg-gray-50 text-gray-600 border border-gray-100 rounded-2xl cursor-default font-medium"
                                 />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black uppercase text-gray-400 ml-2">Prénom</label>
-                                <input
-                                    type="text"
-                                    value={profile.prenom}
-                                    onChange={(e) => setProfile({ ...profile, prenom: e.target.value })}
-                                    className="w-full p-4 bg-gray-50 focus:bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#007b83]/20 transition-all outline-none font-medium"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black uppercase text-gray-400 ml-2">Email (Verrouillé)</label>
-                                <div className="relative">
-                                    <input
-                                        readOnly
-                                        type="email"
-                                        value={profile.email}
-                                        className="w-full p-4 bg-gray-100 text-gray-400 border border-transparent rounded-2xl cursor-not-allowed font-medium"
-                                    />
-                                    <Shield size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black uppercase text-gray-400 ml-2">Téléphone</label>
-                                <input
-                                    type="tel"
-                                    value={profile.contact}
-                                    onChange={(e) => setProfile({ ...profile, contact: e.target.value })}
-                                    className="w-full p-4 bg-gray-50 focus:bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#007b83]/20 transition-all outline-none font-medium"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black uppercase text-gray-400 ml-2">Ville</label>
-                                <input
-                                    type="text"
-                                    value={profile.ville}
-                                    onChange={(e) => setProfile({ ...profile, ville: e.target.value })}
-                                    className="w-full p-4 bg-gray-50 focus:bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#007b83]/20 transition-all outline-none font-medium"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-black uppercase text-gray-400 ml-2">Région</label>
-                                <input
-                                    type="text"
-                                    value={profile.region}
-                                    onChange={(e) => setProfile({ ...profile, region: e.target.value })}
-                                    className="w-full p-4 bg-gray-50 focus:bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#007b83]/20 transition-all outline-none font-medium"
-                                />
-                            </div>
-
-                            <div className="md:col-span-2 flex justify-end mt-4">
-                                <button
-                                    onClick={handleUpdateProfile}
-                                    className="flex items-center gap-2 px-8 py-4 bg-[#007b83] text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg hover:bg-[#00666d] transition-all"
-                                >
-                                    <Check size={16} /> Enregistrer les modifications
-                                </button>
+                                <Shield size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300" />
                             </div>
                         </div>
-                    )}
-
-                    {activeTab === 'security' && (
-                        <div className="max-w-md bg-white p-8 rounded-3xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-3 duration-300">
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-black uppercase text-gray-400 ml-1">Mot de passe actuel</label>
-                                    <div className="relative">
-                                        <input
-                                            type={showCurrentPass ? "text" : "password"}
-                                            value={passwordData.current_password}
-                                            onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
-                                            className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#007b83]/20 outline-none font-medium"
-                                        />
-                                        <button onClick={() => setShowCurrentPass(!showCurrentPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                                            {showCurrentPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-black uppercase text-gray-400 ml-1">Nouveau mot de passe</label>
-                                    <div className="relative">
-                                        <input
-                                            type={showNewPass ? "text" : "password"}
-                                            value={passwordData.new_password}
-                                            onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-                                            className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#007b83]/20 outline-none font-medium"
-                                        />
-                                        <button onClick={() => setShowNewPass(!showNewPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                                            {showNewPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="pt-4">
-                                    <button
-                                        onClick={handleUpdatePassword}
-                                        className="w-full flex items-center justify-center gap-2 py-4 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-wider hover:bg-black transition-colors shadow-md"
-                                    >
-                                        Mettre à jour le mot de passe
-                                    </button>
-                                </div>
-                            </div>
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-black uppercase text-gray-400 ml-2">Téléphone</label>
+                            <input
+                                readOnly
+                                type="tel"
+                                value={profile.contact}
+                                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none font-medium cursor-default text-gray-600"
+                            />
                         </div>
-                    )}
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-black uppercase text-gray-400 ml-2">Ville</label>
+                            <input
+                                readOnly
+                                type="text"
+                                value={profile.ville}
+                                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none font-medium cursor-default text-gray-600"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-black uppercase text-gray-400 ml-2">Région</label>
+                            <input
+                                readOnly
+                                type="text"
+                                value={profile.region}
+                                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none font-medium cursor-default text-gray-600"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 

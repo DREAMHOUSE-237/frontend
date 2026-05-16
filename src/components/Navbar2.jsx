@@ -1,56 +1,51 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom'; 
-import {
-   ChevronDown, User, Building2,
-   LogOut, Menu, X
-} from 'lucide-react';
+import { User, Building2, LogOut, Menu, X, ChevronDown } from 'lucide-react';
 
 const Navbar2 = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false); // Initialisation indispensable pour éviter l'erreur
+  const [scrolled, setScrolled] = useState(false); 
   const profileRef = useRef(null);
 
- const [userName, setUserName] = useState("Utilisateur");
+  const [userName, setUserName] = useState("Utilisateur");
 
- useEffect(() => {
-  const userData = localStorage.getItem('user');
-  const token = localStorage.getItem('token');
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
 
-  if (userData) {
-    const user = JSON.parse(userData);
-    if (user.email) {
-      setUserName(user.email.split('@')[0]);
-      return; // On s'arrête ici si on a trouvé
+    if (userData) {
+      const user = JSON.parse(userData);
+      if (user.email) {
+        setUserName(user.email.split('@')[0]);
+        return; 
+      }
     }
-  }
 
-  // Secours : Décoder le token si l'objet user est absent
-  if (token) {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const payload = JSON.parse(window.atob(base64));
-      
-      const name = payload.email || payload.nom || "Utilisateur";
-      setUserName(name.includes('@') ? name.split('@')[0] : name);
-    } catch (e) {
-      console.error("Erreur décodage", e);
+    // Secours : Décoder le token si l'objet user est absent
+    if (token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(window.atob(base64));
+        
+        const name = payload.email || payload.nom || "Utilisateur";
+        setUserName(name.includes('@') ? name.split('@')[0] : name);
+      } catch (e) {
+        console.error("Erreur décodage", e);
+      }
     }
-  }
-}, []);
+  }, []);
 
   const user = {
     prenom: userName,
     avatar: null
   };
 
-   const handleLogout = () => {
+  const handleLogout = () => {
     localStorage.clear();
-    localStorage.removeItem('token'); // On supprime le token
-    localStorage.removeItem('userId'); // Et les autres infos
-    window.location.href = '/connexion'; // Redirection propre
-};
+    window.location.href = '/connexion'; 
+  };
 
   // Détecter le scroll pour l'effet visuel
   useEffect(() => {
@@ -79,7 +74,6 @@ const Navbar2 = () => {
       : "text-gray-700 hover:text-[#007b83] transition-colors";
 
   return (
-    /* sticky top-0 et z-50 fixent la barre au dessus de tout au scroll */
     <nav className={`sticky top-0 z-[100001] bg-white transition-all duration-300 font-sans ${scrolled ? 'shadow-md py-1' : 'shadow-sm py-2'}`}>
       {/* --- BARRE PRINCIPALE --- */}
       <div className="flex items-center justify-between px-6 py-3">
@@ -106,13 +100,6 @@ const Navbar2 = () => {
 
         {/* Actions Droite */}
         <div className="flex items-center space-x-4">
-
-          {/* Langue & Aide */}
-          <div className="hidden sm:flex items-center text-sm font-medium text-gray-600">
-            <button className="font-bold text-gray-900 px-1">FR</button>
-            <span className="text-gray-300">/</span>
-            <button className="px-1 hover:text-[#007b83]">EN</button>
-          </div>
 
           {/* Avatar / Dropdown (Desktop) */}
           <div className="relative hidden md:block" ref={profileRef}>
@@ -176,7 +163,6 @@ const Navbar2 = () => {
             <NavLink to="/catalogue" className={({isActive}) => `block ${isActive ? 'text-[#007b83]' : 'text-gray-800'}`} onClick={() => setIsOpen(false)}>
                 Catalogue
             </NavLink>
-
             <NavLink to="/publication" className={({isActive}) => `block ${isActive ? 'text-[#007b83]' : 'text-gray-800'}`} onClick={() => setIsOpen(false)}>
                 Publier mon bien
             </NavLink>
@@ -194,7 +180,7 @@ const Navbar2 = () => {
               <NavLink to="/mes-publications" onClick={() => setIsOpen(false)}>
                 <MobileLink icon={Building2} label="Mes propriétés" />
               </NavLink>
-              <MobileLink onClick={handleLogout}  icon={LogOut} label="Déconnexion" color="text-red-500" />
+              <MobileLink onClick={handleLogout} icon={LogOut} label="Déconnexion" color="text-red-500" />
             </div>
           </div>
         </div>
@@ -206,20 +192,20 @@ const Navbar2 = () => {
 /* --- COMPOSANTS INTERNES --- */
 const DropdownItem = ({ icon: Icon, label, color = "text-gray-800", onClick }) => (
   <div 
-    onClick={onClick} // ✅ Indispensable pour que le clic fonctionne
+    onClick={onClick} 
     className={`w-full flex items-center space-x-4 px-5 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer ${color}`}
   >
-    <Icon size={18} className="text-gray-400" />
+    <Icon size={18} className="text-gray-400/80" />
     <span className="text-sm">{label}</span>
   </div>
 );
 
 const MobileLink = ({ icon: Icon, label, color = "text-gray-800", onClick }) => (
   <div 
-    onClick={onClick} // ✅ Indispensable ici aussi
+    onClick={onClick} 
     className={`flex items-center space-x-4 py-1.5 cursor-pointer ${color}`}
   >
-    <Icon size={22} className="text-gray-400" />
+    <Icon size={22} className="text-gray-400/80" />
     <span className="text-base">{label}</span>
   </div>
 );

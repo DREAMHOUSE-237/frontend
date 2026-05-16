@@ -181,7 +181,7 @@ function App() {
           <Route 
             path='/accueil2' 
             element={
-              <ProtectedRoute allowedRoles={['proprietaire','pending_proprietaire', 'agence']}>
+              <ProtectedRoute allowedRoles={['proprietaire','pending_proprietaire', 'pending_agent', 'agence']}>
                 <ProprietaireHome />
               </ProtectedRoute>
             } 
@@ -189,7 +189,7 @@ function App() {
           <Route 
             path='/publication' 
             element={
-              <ProtectedRoute allowedRoles={['proprietaire', 'pending_proprietaire', 'agence']}>
+              <ProtectedRoute allowedRoles={['proprietaire', 'pending_proprietaire', 'pending_agent', 'agence']}>
                 <Publication />
               </ProtectedRoute>
             } 
@@ -197,7 +197,7 @@ function App() {
           <Route 
             path='/mes-publications' 
             element={
-              <ProtectedRoute allowedRoles={['proprietaire','pending_proprietaire', 'agence']}>
+              <ProtectedRoute allowedRoles={['proprietaire','pending_proprietaire', 'prending_agent', 'agence']}>
                 <MyPublications />
               </ProtectedRoute>
             } 
@@ -205,7 +205,7 @@ function App() {
           <Route 
             path='/modif/:id' 
             element={
-              <ProtectedRoute allowedRoles={['proprietaire','pending_proprietaire', 'agence']}>
+              <ProtectedRoute allowedRoles={['proprietaire','pending_proprietaire', 'pending_agent', 'agence']}>
                 <ModifierPublication />
               </ProtectedRoute>
             } 

@@ -24,7 +24,7 @@ const Navbar = () => {
     <nav className={`sticky top-0 z-[10001] bg-white transition-all duration-300 font-sans ${scrolled ? 'shadow-md py-1' : 'shadow-sm py-3'}`}>
       <div className="flex items-center justify-between px-6 py-3">
         
-        {/* Logo - Ajusté pour être à gauche sans marge excessive */}
+        {/* Logo - À gauche sans marge excessive */}
         <NavLink to="/" className="flex items-center space-x-2 cursor-pointer">
           <div className="w-8 h-8 bg-[#007b83] rounded-full flex items-center justify-center text-white text-xs font-bold">
             D
@@ -43,20 +43,14 @@ const Navbar = () => {
           <NavLink to="/catalogue" className={linkStyles}>Catalogue</NavLink>
         </div>
 
-        {/* Côté Droit : Sélecteur de langue et Bouton Connexion Unique */}
+        {/* Côté Droit : Bouton Connexion Unique & Menu Burger */}
         <div className="flex items-center space-x-4">
-          <div className="hidden sm:flex items-center text-sm font-medium text-gray-600">
-            <button className="font-bold text-gray-900 px-1">FR</button>
-            <span className="text-gray-300">/</span>
-            <button className="px-1 hover:text-[#007b83]">EN</button>
-          </div>
-
+          
           {/* Zone de connexion Desktop épurée */}
           <div className="hidden md:flex items-center">
             <NavLink to="/connexion">
-              {/* Bouton mis à jour : conserve ton style mais ajoute l'icône */}
-              <button className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-[#007b83] border border-[#007b83] rounded-md hover:bg-[#f0f9fa]">
-                <User size={16} /> {/* L'icône bonhomme */}
+              <button className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-[#007b83] border border-[#007b83] rounded-md hover:bg-[#f0f9fa] transition-colors">
+                <User size={16} /> 
                 Se connecter
               </button>
             </NavLink>
@@ -92,7 +86,6 @@ const Navbar = () => {
             Catalogue
           </NavLink>
          
-          
           <hr className="border-gray-100" />
           
           {/* Action unique mobile */}
