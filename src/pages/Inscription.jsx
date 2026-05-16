@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Lock, Phone, MapPin, Upload, Briefcase, X, Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { registerUser, IdentityService } from '../service/auth_service';
-import { useNavigate } from 'react-router-dom';
 
 const Inscription = () => {
     const [accountType, setAccountType] = useState('client');
@@ -9,7 +8,6 @@ const Inscription = () => {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false); 
-    const navigate = useNavigate();
    
     const [formData, setFormData] = useState({
         nom: '',
@@ -45,21 +43,21 @@ const Inscription = () => {
         }
 
         try {
-            // 2. Inscription dans le USER-SERVICE (Données textuelles de profil)
+            // 2. Inscription dans le USER-SERVICE (Données de profil)
             const userData = {
                 role: accountType,
                 email: formData.email,
                 password: formData.password,
                 nom: formData.nom,
                 prenom: formData.prenom,
-                tel: accountType === 'admin' ? "" : formData.tel,
-                ville: accountType === 'admin' ? "" : formData.ville,
-                region: accountType === 'admin' ? "" : formData.region
+                tel: formData.tel,
+                ville: formData.ville,
+                region: formData.region
             };
 
             await registerUser(userData);
 
-            // 3. Liaison avec l'IDENTITY-SERVICE si le rôle est éligible (Structure FormData pour fichiers)
+            // 3. Liaison avec l'IDENTITY-SERVICE si le rôle est éligible
             if (accountType === "proprietaire" || accountType === "agence") {
                 const identityData = new FormData();
                 identityData.append('email', formData.email);
@@ -69,7 +67,6 @@ const Inscription = () => {
                 if (cniRecto) identityData.append('cni_recto', cniRecto);
                 if (cniVerso) identityData.append('cni_verso', cniVerso);
 
-                // Appel de ton IdentityService d'analyse OCR
                 const ocrResult = await IdentityService.registerWithIdentity(identityData);
                 
                 if (ocrResult.status === 'verified') {
@@ -80,10 +77,23 @@ const Inscription = () => {
             setSuccess(true); 
             setLoading(false); 
 
-            // Redirection après 3 secondes vers la page de connexion
+            // Réinitialisation propre des états locaux pour préparer la suite
+            setFormData({
+                nom: '',
+                prenom: '',
+                email: '',
+                password: '',
+                tel: '',
+                ville: '',
+                region: ''
+            });
+            setCniRecto(null);
+            setCniVerso(null);
+
+            // Redirection après 3 secondes avec rafraîchissement complet d'état
             setTimeout(() => {
                 window.location.href = '/connexion';
-            }, 3000);
+            }, 2500);
 
         } catch (err) {
             console.error("Erreur lors de l'inscription croisée :", err);
@@ -131,7 +141,6 @@ const Inscription = () => {
                             <option value="client">Client</option>
                             <option value="proprietaire">Propriétaire</option>
                             <option value="agence">Agence Immobilière</option>
-                            <option value="admin">Administrateur</option>
                         </select>
                     </div>
                 </div>
@@ -166,55 +175,51 @@ const Inscription = () => {
                     onChange={handleInputChange}
                 />
 
-                {accountType !== 'admin' && (
-                    <>
-                        <InputGroup
-                            disabled={loading || success}
-                            icon={<Phone size={18} />}
-                            type="tel"
-                            placeholder="+237 6 XX XX XX XX"
-                            name="tel"
-                            value={formData.tel}
-                            onChange={handleInputChange}
-                        />
+                <InputGroup
+                    disabled={loading || success}
+                    icon={<Phone size={18} />}
+                    type="tel"
+                    placeholder="+237 6 XX XX XX XX"
+                    name="tel"
+                    value={formData.tel}
+                    onChange={handleInputChange}
+                />
 
-                        <InputGroup
-                            disabled={loading || success}
-                            icon={<MapPin size={18} />}
-                            placeholder="Ville"
-                            name="ville"
-                            value={formData.ville}
-                            onChange={handleInputChange}
-                        />
+                <InputGroup
+                    disabled={loading || success}
+                    icon={<MapPin size={18} />}
+                    placeholder="Ville"
+                    name="ville"
+                    value={formData.ville}
+                    onChange={handleInputChange}
+                />
 
-                        <InputGroup
-                            disabled={loading || success}
-                            icon={<MapPin size={18} />}
-                            placeholder="Sélectionnez votre région"
-                            name="region"
-                            as="select"
-                            value={formData.region}
-                            onChange={handleInputChange}
-                        >
-                            <option value="adamaoua">Adamaoua</option>
-                            <option value="centre">Centre</option>
-                            <option value="est">Est</option>
-                            <option value="extreme_nord">Extrême-Nord</option>
-                            <option value="littoral">Littoral</option>
-                            <option value="nord">Nord</option>
-                            <option value="nord_ouest">Nord-Ouest</option>
-                            <option value="ouest">Ouest</option>
-                            <option value="sud">Sud</option>
-                            <option value="sud_ouest">Sud-Ouest</option>
-                        </InputGroup>
-                    </>
-                )}
+                <InputGroup
+                    disabled={loading || success}
+                    icon={<MapPin size={18} />}
+                    placeholder="Sélectionnez votre région"
+                    name="region"
+                    as="select"
+                    value={formData.region}
+                    onChange={handleInputChange}
+                >
+                    <option value="adamaoua">Adamaoua</option>
+                    <option value="centre">Centre</option>
+                    <option value="est">Est</option>
+                    <option value="extreme_nord">Extrême-Nord</option>
+                    <option value="littoral">Littoral</option>
+                    <option value="nord">Nord</option>
+                    <option value="nord_ouest">Nord-Ouest</option>
+                    <option value="ouest">Ouest</option>
+                    <option value="sud">Sud</option>
+                    <option value="sud_ouest">Sud-Ouest</option>
+                </InputGroup>
 
                 <InputGroup
                     disabled={loading || success}
                     icon={<Lock size={18} />}
                     type={showPassword ? "text" : "password"}
-                    placeholder="Mot de passe au moins 6 caractere"
+                    placeholder="Mot de passe au moins 6 caractères"
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
@@ -328,7 +333,6 @@ const UploadBox = ({
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
-            // On sauvegarde directement l'objet File brut requis par FormData
             setFile(selectedFile);
         }
     };
