@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Mail, Lock, Phone, MapPin, Upload, Briefcase, X, Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, Mail, Lock, Phone, MapPin, Upload, Briefcase, X, Eye, EyeOff, Shield,Loader2, CheckCircle, AlertCircle, Building2 } from 'lucide-react';
 import { registerUser, IdentityService } from '../service/auth_service';
 
 const Inscription = () => {
@@ -16,7 +16,13 @@ const Inscription = () => {
         password: '',
         tel: '',
         ville: '',
-        region: ''
+        region: '',
+        // Nouveaux champs spécifiques pour l'agent/agence immobilière
+        nomAgence: '',
+        quartier: '',
+        numeroIdentification: '',
+        nomPDG: '',
+        contactPrincipal: ''
     });
 
     const [cniRecto, setCniRecto] = useState(null);
@@ -35,7 +41,7 @@ const Inscription = () => {
         setLoading(true); 
         setError(null);
 
-        // 1. Validation locale pour les rôles nécessitant la CNI
+        // 1. Validation pour les rôles nécessitant les pièces d'identité
         if ((accountType === "proprietaire" || accountType === "agence") && (!cniRecto || !cniVerso)) {
             setError("Veuillez ajouter les images recto et verso de la CNI.");
             setLoading(false);
@@ -43,7 +49,7 @@ const Inscription = () => {
         }
 
         try {
-            // 2. Inscription dans le USER-SERVICE (Données de profil)
+            // 2. Préparation du payload pour le USER-SERVICE
             const userData = {
                 role: accountType,
                 email: formData.email,
@@ -52,32 +58,45 @@ const Inscription = () => {
                 prenom: formData.prenom,
                 tel: formData.tel,
                 ville: formData.ville,
-                region: formData.region
+                region: formData.region,
+                // Inclusion conditionnelle des attributs d'agence
+                ...(accountType === "agence" && {
+                    nomAgence: formData.nomAgence,
+                    quartier: formData.quartier,
+                    numeroIdentification: formData.numeroIdentification,
+                    nomPDG: formData.nomPDG,
+                    contactPrincipal: formData.contactPrincipal
+                })
             };
 
             await registerUser(userData);
 
-            // 3. Liaison avec l'IDENTITY-SERVICE si le rôle est éligible
+            // 3. Liaison avec l'IDENTITY-SERVICE si éligible (OCR / CNI)
             if (accountType === "proprietaire" || accountType === "agence") {
                 const identityData = new FormData();
                 identityData.append('email', formData.email);
                 identityData.append('password', formData.password);
                 identityData.append('requested_role', accountType);
                 
+                // On passe également les métadonnées d'identification si c'est une agence
+                if (accountType === "agence") {
+                    identityData.append('nom_agence', formData.nomAgence);
+                    identityData.append('numero_identification', formData.numeroIdentification);
+                }
+
                 if (cniRecto) identityData.append('cni_recto', cniRecto);
                 if (cniVerso) identityData.append('cni_verso', cniVerso);
 
                 const ocrResult = await IdentityService.registerWithIdentity(identityData);
-                
                 if (ocrResult.status === 'verified') {
-                    console.log("✓ Identité vérifiée instantanément par le module OCR.");
+                    console.log("✓ Identité validée instantanément par OCR.");
                 }
             }
 
             setSuccess(true); 
             setLoading(false); 
 
-            // Réinitialisation propre des états locaux pour préparer la suite
+            // Réinitialisation complète
             setFormData({
                 nom: '',
                 prenom: '',
@@ -85,12 +104,16 @@ const Inscription = () => {
                 password: '',
                 tel: '',
                 ville: '',
-                region: ''
+                region: '',
+                nomAgence: '',
+                quartier: '',
+                numeroIdentification: '',
+                nomPDG: '',
+                contactPrincipal: ''
             });
             setCniRecto(null);
             setCniVerso(null);
 
-            // Redirection après 3 secondes avec rafraîchissement complet d'état
             setTimeout(() => {
                 window.location.href = '/connexion';
             }, 2500);
@@ -105,7 +128,6 @@ const Inscription = () => {
 
     return (
         <div className="w-full max-w-md mx-auto">
-            {/* Message d'erreur dynamique */}
             {error && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl flex items-center gap-3 animate-in fade-in duration-300">
                     <AlertCircle className="text-red-500" size={24} />
@@ -113,25 +135,18 @@ const Inscription = () => {
                 </div>
             )}
 
-            {/* Message de succès */}
             {success && (
                 <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl flex items-center gap-3 animate-in fade-in zoom-in duration-300">
                     <CheckCircle className="text-emerald-500" size={24} />
-                    <p className="font-bold text-sm">
-                        Votre compte a été créé, connectez-vous !
-                    </p>
+                    <p className="font-bold text-sm">Votre compte a été créé, connectez-vous !</p>
                 </div>
             )}
 
             <form className="mt-8 space-y-5" onSubmit={handleRegister}>
                 <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-600 uppercase ml-1">
-                        Type de compte
-                    </label>
-
+                    <label className="text-xs font-bold text-gray-600 uppercase ml-1">Type de compte</label>
                     <div className="relative group">
                         <Briefcase className="absolute left-3 top-3.5 text-gray-400" size={18} />
-
                         <select
                             disabled={loading || success}
                             value={accountType}
@@ -140,11 +155,56 @@ const Inscription = () => {
                         >
                             <option value="client">Client</option>
                             <option value="proprietaire">Propriétaire</option>
-                            <option value="agence">Agence Immobilière</option>
+                            <option value="agence">Agence Immobilière / Agent</option>
                         </select>
                     </div>
                 </div>
 
+                {/* --- CHAMPS SPÉCIFIQUES SI AGENCE IMMOBILIÈRE --- */}
+                {accountType === "agence" && (
+                    <div className="space-y-4 p-4 bg-teal-50/30 rounded-2xl border border-teal-50/50 animate-in fade-in duration-300">
+                        <p className="text-[10px] font-black uppercase text-[#007b83] tracking-widest mb-2">Informations de l'agence</p>
+                        
+                        <InputGroup
+                            disabled={loading || success}
+                            icon={<Building2 size={18} />}
+                            placeholder="Nom de l'Agence"
+                            name="nomAgence"
+                            value={formData.nomAgence}
+                            onChange={handleInputChange}
+                        />
+
+                        <InputGroup
+                            disabled={loading || success}
+                            icon={<User size={18} />}
+                            placeholder="Nom du PDG / Directeur"
+                            name="nomPDG"
+                            value={formData.nomPDG}
+                            onChange={handleInputChange}
+                        />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <InputGroup
+                                disabled={loading || success}
+                                icon={<Shield size={18} />}
+                                placeholder="N° d'identification / Registre"
+                                name="numeroIdentification"
+                                value={formData.numeroIdentification}
+                                onChange={handleInputChange}
+                            />
+                            <InputGroup
+                                disabled={loading || success}
+                                icon={<Phone size={18} />}
+                                placeholder="Contact Principal"
+                                name="contactPrincipal"
+                                value={formData.contactPrincipal}
+                                onChange={handleInputChange}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* --- CHAMPS STANDARDS USER --- */}
                 <div className="grid grid-cols-2 gap-4">
                     <InputGroup
                         disabled={loading || success}
@@ -154,7 +214,6 @@ const Inscription = () => {
                         value={formData.nom}
                         onChange={handleInputChange}
                     />
-
                     <InputGroup
                         disabled={loading || success}
                         icon={<User size={18} />}
@@ -179,20 +238,32 @@ const Inscription = () => {
                     disabled={loading || success}
                     icon={<Phone size={18} />}
                     type="tel"
-                    placeholder="+237 6 XX XX XX XX"
+                    placeholder="Téléphone Personnel (+237...)"
                     name="tel"
                     value={formData.tel}
                     onChange={handleInputChange}
                 />
 
-                <InputGroup
-                    disabled={loading || success}
-                    icon={<MapPin size={18} />}
-                    placeholder="Ville"
-                    name="ville"
-                    value={formData.ville}
-                    onChange={handleInputChange}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                    <InputGroup
+                        disabled={loading || success}
+                        icon={<MapPin size={18} />}
+                        placeholder="Ville"
+                        name="ville"
+                        value={formData.ville}
+                        onChange={handleInputChange}
+                    />
+                    {accountType === "agence" && (
+                        <InputGroup
+                            disabled={loading || success}
+                            icon={<MapPin size={18} />}
+                            placeholder="Quartier"
+                            name="quartier"
+                            value={formData.quartier}
+                            onChange={handleInputChange}
+                        />
+                    )}
+                </div>
 
                 <InputGroup
                     disabled={loading || success}
@@ -219,39 +290,24 @@ const Inscription = () => {
                     disabled={loading || success}
                     icon={<Lock size={18} />}
                     type={showPassword ? "text" : "password"}
-                    placeholder="Mot de passe au moins 6 caractères"
+                    placeholder="Mot de passe (min. 6 caractères)"
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
                     rightElement={
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="text-gray-400"
-                        >
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-400">
                             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                     }
                 />
 
+                {/* --- DOCUMENTS RECTO/VERSO (Propriétaires & Agences) --- */}
                 {(accountType === "proprietaire" || accountType === "agence") && (
                     <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-600 uppercase ml-1">
-                            Documents d'identité (Obligatoire pour la validation)
-                        </label>
-
+                        <label className="text-xs font-bold text-gray-600 uppercase ml-1">Documents d'identité (CNI / Mandat)</label>
                         <div className="grid grid-cols-2 gap-3">
-                            <UploadBox
-                                label="CNI Recto"
-                                file={cniRecto}
-                                setFile={setCniRecto}
-                            />
-
-                            <UploadBox
-                                label="CNI Verso"
-                                file={cniVerso}
-                                setFile={setCniVerso}
-                            />
+                            <UploadBox label="CNI Recto" file={cniRecto} setFile={setCniRecto} />
+                            <UploadBox label="CNI Verso" file={cniVerso} setFile={setCniVerso} />
                         </div>
                     </div>
                 )}
@@ -264,9 +320,7 @@ const Inscription = () => {
                     {loading ? (
                         <>
                             <Loader2 className="animate-spin" size={20} />
-                            {accountType === 'proprietaire' || accountType === 'agence' 
-                                ? "Vérification OCR et Inscription..." 
-                                : "Inscription en cours..."}
+                            {accountType === 'client' ? "Inscription en cours..." : "Vérification OCR et Traitement..."}
                         </>
                     ) : (
                         "S'inscrire"
@@ -277,30 +331,16 @@ const Inscription = () => {
     );
 };
 
-const InputGroup = ({
-    icon,
-    type = "text",
-    placeholder,
-    name,
-    value,
-    onChange,
-    children,
-    as = "input",
-    rightElement,
-    disabled
-}) => (
+const InputGroup = ({ icon, type = "text", placeholder, name, value, onChange, children, as = "input", rightElement, disabled }) => (
     <div className="relative group">
-        <div className="absolute left-3 top-3.5 text-gray-400">
-            {icon}
-        </div>
-
+        <div className="absolute left-3 top-3.5 text-gray-400">{icon}</div>
         {as === "select" ? (
             <select
                 disabled={disabled}
                 name={name}
                 value={value}
                 onChange={onChange}
-                className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none text-sm pl-11 appearance-none disabled:opacity-50"
+                className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none text-sm pl-11 appearance-none disabled:opacity-50 cursor-pointer"
             >
                 <option value="">{placeholder}</option>
                 {children}
@@ -316,65 +356,29 @@ const InputGroup = ({
                 className="w-full p-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none text-sm pl-11 disabled:opacity-50"
             />
         )}
-
-        {rightElement && (
-            <div className="absolute right-3 top-3.5">
-                {rightElement}
-            </div>
-        )}
+        {rightElement && <div className="absolute right-3 top-3.5">{rightElement}</div>}
     </div>
 );
 
-const UploadBox = ({
-    label,
-    file,
-    setFile
-}) => {
+const UploadBox = ({ label, file, setFile }) => {
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
-        if (selectedFile) {
-            setFile(selectedFile);
-        }
+        if (selectedFile) setFile(selectedFile);
     };
 
     return (
         <div className="relative h-28">
-            <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-                id={`upload-${label}`}
-            />
-
+            <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" id={`upload-${label}`} />
             {!file ? (
-                <label
-                    htmlFor={`upload-${label}`}
-                    className="h-full border-2 border-dashed border-gray-200 rounded-xl p-2 flex flex-col items-center justify-center cursor-pointer hover:border-[#007b83] hover:bg-teal-50/10 transition-all"
-                >
+                <label htmlFor={`upload-${label}`} className="h-full border-2 border-dashed border-gray-200 rounded-xl p-2 flex flex-col items-center justify-center cursor-pointer hover:border-[#007b83] hover:bg-teal-50/10 transition-all">
                     <Upload size={20} className="text-gray-400" />
-                    <span className="text-[10px] font-bold text-gray-500 uppercase">
-                        {label}
-                    </span>
+                    <span className="text-[10px] font-bold text-gray-500 uppercase">{label}</span>
                 </label>
             ) : (
                 <div className="relative h-full w-full rounded-xl overflow-hidden border border-gray-200">
-                    <img
-                        src={URL.createObjectURL(file)}
-                        alt="Aperçu CNI"
-                        className="h-full w-full object-cover"
-                    />
-                    <div className="absolute bottom-0 inset-x-0 bg-black/40 text-[8px] text-white p-1 truncate text-center font-mono">
-                        {file.name}
-                    </div>
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            setFile(null);
-                        }}
-                        className="absolute top-1 right-1 bg-[#007b83] text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                    >
+                    <img src={URL.createObjectURL(file)} alt="CNI" className="h-full w-full object-cover" />
+                    <div className="absolute bottom-0 inset-x-0 bg-black/40 text-[8px] text-white p-1 truncate text-center font-mono">{file.name}</div>
+                    <button type="button" onClick={(e) => { e.preventDefault(); setFile(null); }} className="absolute top-1 right-1 bg-[#007b83] text-white rounded-full p-1 hover:bg-red-600 transition-colors">
                         <X size={12} />
                     </button>
                 </div>
