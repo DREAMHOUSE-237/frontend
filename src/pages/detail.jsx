@@ -253,7 +253,7 @@ const Details = () => {
 
               {/* Lien WhatsApp avec message prédéfini dynamique */}
               <a
-                href={`https://wa.me/${bien.numeroPaiement?.replace(/\s+/g, '')}?text=${encodeURIComponent(
+                href={`https://wa.me/+237${bien.numeroPaiement?.replace(/\s+/g, '')}?text=${encodeURIComponent(
                   `Bonjour, je suis intéressé par votre annonce "${bien.titreBien}" située à ${bien.quartier} (${bien.prix} FCFA). Est-elle toujours disponible ?`
                 )}`}
                 target="_blank"

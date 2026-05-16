@@ -358,7 +358,7 @@ export const updateProfile = async (profileData) => {
         const userId = localStorage.getItem("userId");
 
         const response = await axios.patch(
-            `${API_URL}/USER-SERVICE/users/user/${userId}/modification/`,
+            `${API_URL}/USER-SERVICE/users/users/${userId}/modification/`,
             profileData, 
             {
                 headers: {
