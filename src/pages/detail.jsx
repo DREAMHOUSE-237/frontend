@@ -20,8 +20,8 @@ const Details = () => {
   const [isMapMaximized, setIsMapMaximized] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
-  const [coords, setCoords] = useState(null); // Initialisé à null pour forcer la donnée backend
-  const [replyingTo, setReplyingTo] = useState(null); // Stocke l'ID du commentaire en cours de réponse
+  const [coords, setCoords] = useState(null); 
+  const [replyingTo, setReplyingTo] = useState(null); 
   const [replyText, setReplyText] = useState("");
   const navigate = useNavigate();
 

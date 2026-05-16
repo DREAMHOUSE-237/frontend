@@ -45,7 +45,7 @@ const LayoutWrapper = ({ children, isAuthenticated, setIsAuthenticated }) => {
   const location = useLocation();
   
   // Pages où l'on cache la Navbar et le Footer
-  const hideLayout = ['/connexion2', '/connexion','/inscription'].includes(location.pathname);
+  const hideLayout = ['/connexion2', '/connexion','/inscription', '/admin'].includes(location.pathname);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
