@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom'; 
 import { User, LogOut, Menu, X, ChevronDown } from 'lucide-react';
+// ✅ IMPORT DU LOGO DEPUIS TES ASSETS
+import logo from '../assets/logo.jpeg'; 
 
 const Navbar3 = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false); 
-  const profileRef = useRef(null);
+  profileRef = useRef(null);
 
   const [userName, setUserName] = useState("Utilisateur");
 
@@ -78,14 +80,19 @@ const Navbar3 = () => {
       {/* --- BARRE PRINCIPALE --- */}
       <div className="flex items-center justify-between px-6 py-3">
 
-        {/* Logo Section */}
-        <NavLink to="/" className="flex items-center space-x-2 cursor-pointer">
-          <div className="w-8 h-8 bg-[#007b83] rounded-full flex items-center justify-center text-white text-xs font-bold">
-            D
+        {/* Logo & Titre - À gauche */}
+        <NavLink to="/" className="flex items-center space-x-3 cursor-pointer group">
+          {/* ✅ Intégration de l'image de ton logo avec réduction fluide au scroll */}
+          <div className={`overflow-hidden rounded-xl transition-all duration-300 ${scrolled ? 'w-9 h-9' : 'w-11 h-11'}`}>
+            <img 
+              src={logo} 
+              alt="DreamHouse Logo" 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+            />
           </div>
-          <div className="text-xl font-bold tracking-tight">
-            <span className="text-[#007b83]">Dream</span>
-            <span className="text-[#ff8800] ml-1">House</span>
+          <div className="text-xl font-black tracking-tight font-sans">
+            <span className="text-[#ff8800]">Dream</span>
+            <span className="text-[#007b83]">House</span>
           </div>
         </NavLink>
 

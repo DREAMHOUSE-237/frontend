@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import acc3 from '../assets/acc3.jpg';
+import logo from '../assets/logo.jpeg'; 
 
 // Importation des sous-composants
 import LoginForm from './Connexion2';
@@ -21,11 +22,18 @@ const AuthPage = () => {
                 <div className="max-w-md mx-auto w-full py-8">
                     {/* LOGO CENTRALISÉ */}
                     <div className="text-center mb-8">
-                        <div className="flex justify-center items-center gap-2 mb-2">
-                            <div className="w-8 h-8 bg-[#007b83] rounded-full flex items-center justify-center text-white text-xs font-bold">D</div>
-                            <div className="text-xl font-bold tracking-tight">
-                                <span className="text-[#007b83]">Dream</span>
-                                <span className="text-[#ff8800] ml-1">House</span>
+                        <div className="flex flex-col justify-center items-center gap-3 mb-4 group">
+                            {/* ✅ Intégration de l'image de ton logo officiel */}
+                            <div className="w-14 h-14 overflow-hidden rounded-xl shadow-sm border border-gray-100">
+                                <img 
+                                  src={logo} 
+                                  alt="DreamHouse Logo" 
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                                />
+                            </div>
+                            <div className="text-2xl font-black tracking-tight font-sans">
+                                <span className="text-[#ff8800]">Dream</span>
+                                <span className="text-[#007b83]">House</span>
                             </div>
                         </div>
                         
