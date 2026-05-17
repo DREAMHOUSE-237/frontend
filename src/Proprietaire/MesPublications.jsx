@@ -7,40 +7,38 @@ import {
   Trash2,
   Edit3,
 } from 'lucide-react';
-import { useNavigate , Link} from 'react-router-dom';
-import { Mes_Publications, deletePublication } from '../service/auth_service';
+import { useNavigate, Link } from 'react-router-dom';
+import { Mes_Publications, deletePublication, BienService } from '../service/auth_service';
 
 const MyPublications = () => {
-  const [publications, SetPublications] = useState([]);
+  const [publications, setPublications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, SetError] = useState(null);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
+
   useEffect(() => {
     fetchData();
   }, []);
 
-  const API_URL = "/api";
   const fetchData = async () => {
-
     try {
       setLoading(true);
       const data = await Mes_Publications();
-      SetPublications(data);
+      setPublications(data);
     } catch (err) {
-      SetError("Erreur de chargement des donnees.")
+      setError("Erreur de chargement des données.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-
   };
 
   const handleDelete = async (id) => {
     if (window.confirm("Voulez-vous vraiment supprimer cette annonce ?")) {
       try {
         await deletePublication(id);
-        SetPublications(publications.filter(p => p.id !== id));
+        setPublications(publications.filter(p => p.id !== id));
       } catch (err) {
-        alert("Erreur lors de la suppression")
+        alert("Erreur lors de la suppression");
       }
     }
   };
@@ -48,12 +46,10 @@ const MyPublications = () => {
   if (loading) {
     return (
       <div className='min-h-screen flex items-center justify-center'>
-        <Loader2 className='animate-spin text-[~007b83]' size={40} />
+        <Loader2 className='animate-spin text-[#007b83]' size={40} />
       </div>
     );
   }
-
-
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
@@ -79,12 +75,16 @@ const MyPublications = () => {
               key={pub.id}
               className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col sm:flex-row group hover:shadow-md transition-shadow"
             >
-              {/* Image de l'annonce */}
-              <div className="relative w-full sm:w-48 h-48 sm:h-auto overflow-hidden">
+              {/* ✅ FIX CLOUDINARY SECURE : Lecture de la première image via BienService.formatImageUrl */}
+              <div className="relative w-full sm:w-48 h-48 sm:h-auto overflow-hidden bg-gray-100 flex items-center justify-center">
                 <img
-                  src={pub.images && pub.images.length > 0 ? `${API_URL}/PUBLICATION-SERVICE/uploads/${pub.images[0]}` : "api/placeholder/400/320"}
+                  src={pub.images && pub.images.length > 0 && pub.images[0] ? BienService.formatImageUrl(pub.images[0]) : "https://via.placeholder.com/400x320?text=Aucune+image"}
                   alt={pub.titreBien}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  onError={(e) => {
+                    e.target.onerror = null; 
+                    e.target.src = "https://via.placeholder.com/400x320?text=Image+Introuvable";
+                  }}
                 />
               </div>
 
@@ -103,7 +103,7 @@ const MyPublications = () => {
                     </div>
                   </div>
 
-                  {/* Menu d'actions (Trois points) */}
+                  {/* Menu d'actions */}
                   <div className="flex gap-2">
                     <Link to={`/modif/${pub.id}`}>
                       <button className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-blue-600 transition-colors">
@@ -114,7 +114,6 @@ const MyPublications = () => {
                     <button
                       onClick={() => handleDelete(pub.id)}
                       className="p-2 hover:bg-red-50 rounded-full text-gray-400 hover:text-red-600 transition-colors">
-
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -128,7 +127,7 @@ const MyPublications = () => {
 
                   <div className="flex items-center gap-2 text-gray-400 text-xs">
                     <Calendar size={14} />
-                    Posté le {new Date(pub.datePublication).toLocaleDateString()}
+                    Posté le {pub.datePublication ? new Date(pub.datePublication).toLocaleDateString() : "Récemment"}
                   </div>
                 </div>
               </div>
@@ -142,7 +141,7 @@ const MyPublications = () => {
             <h3 className="text-lg font-bold text-gray-800">Aucune publication</h3>
             <p className="text-gray-500 mb-6">Vous n'avez pas encore ajouté d'annonces.</p>
             <button
-              onClick={() => navigate('/publication')} // Redirection ici
+              onClick={() => navigate('/publication')}
               className="bg-[#007b83] text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
             >
               Créer ma première annonce

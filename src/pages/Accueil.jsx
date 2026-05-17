@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Home, ChevronRight, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import {  BienService } from '../service/auth_service'; // Import de tes services
+import { BienService } from '../service/auth_service'; 
 import acc1 from '../assets/acc1.png';
 
 const Accueil = () => {
@@ -77,7 +77,6 @@ const Accueil = () => {
               Annonces Actuelles
             </h2>
           </div>
-          {/* Compteur total dynamique du backend */}
           <span className="text-gray-500 text-sm font-medium">
             {loading ? "..." : annonces.length} annonces disponibles
           </span>
@@ -87,18 +86,23 @@ const Accueil = () => {
           <div className="text-center py-20 italic text-gray-400">Chargement des meilleures opportunités...</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {/* Affichage de seulement 4 annonces avec slice(0, 4) */}
+            {/* Affichage des 4 premières annonces */}
             {annonces.slice(0, 4).map((annonce) => (
               <div
                 key={annonce.id}
                 onClick={() => navigate(`/detail/${annonce.id}`)}
                 className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group border border-gray-100 overflow-hidden flex flex-col"
               >
-                <div className="relative h-48 overflow-hidden bg-gray-200">
+                {/* Image principale : Récupération directe du premier index du tableau Cloudinary */}
+                <div className="relative h-48 overflow-hidden bg-gray-100 flex items-center justify-center">
                   <img 
-                    src={BienService.formatImageUrl(annonce.images?.[0])} 
+                    src={annonce.images && annonce.images.length > 0 && annonce.images[0] ? annonce.images[0] : "https://via.placeholder.com/400x320?text=Aucune+image"} 
                     alt={annonce.titreBien} 
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "https://via.placeholder.com/400x320?text=Image+indisponible";
+                    }}
                   />
                 </div>
 
@@ -126,7 +130,7 @@ const Accueil = () => {
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between text-gray-500">
-                    <div className="flex items-center gap-1 text-xs truncate">
+                    <div className="flex items-center gap-1 text-xs truncate max-w-[180px]">
                       <MapPin size={14} className="text-[#007b83]" />
                       {annonce.quartier}, {annonce.ville}
                     </div>

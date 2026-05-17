@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     ChevronLeft, ChevronRight, MapPin, Layout,
     Sparkles, Type, AlignLeft, DollarSign, Clock, Check,
-    Camera, Plus, Home, X,Smartphone , Navigation,Loader2 ,Search, Maximize2, Minimize2
+    Camera, Plus, Home, X, Smartphone, Navigation, Loader2, Maximize2, Minimize2
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
 import SearchLocation from '../components/Map/SearchLocation';
@@ -22,7 +22,7 @@ const PublicationAnnonce = () => {
         { id: 2, label: 'Complément', icon: <Sparkles size={20} /> },
         { id: 3, label: 'Position', icon: <MapPin size={20} /> },
     ];
-    // Dans ton composant PublicationAnnonce
+
     const [formData, setFormData] = useState({
         titreBien: '',
         prix: '',
@@ -30,7 +30,7 @@ const PublicationAnnonce = () => {
         nbrePiece: '',
         description: '',
         typePublication: '',
-        numeroPaiement: '',
+        numeroPaiement: '', // Contiendra uniquement les 9 chiffres saisis (ex: 699999999)
         typeBienImmobilier: '',
         categorie: '',
         region: '',
@@ -38,46 +38,54 @@ const PublicationAnnonce = () => {
         quartier: ''
     });
 
-
-
-    // Handler générique pour les champs texte et select
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+        
+        // Limitation stricte à 9 chiffres pour le numéro de paiement
+        if (name === 'numeroPaiement' && value.length > 9) {
+            return;
+        }
+        
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files);
-        const newImgs = files.map(file => Object.assign(file, {
+        const newImages = files.map(file => ({
+            raw: file,
             preview: URL.createObjectURL(file)
         }));
-        setImages([...images, ...newImgs]);
+        setImages(prev => [...prev, ...newImages]);
     };
 
     const handleDocUpload = (e) => {
         const files = Array.from(e.target.files);
-        const newDocs = files.map(file => Object.assign(file, {
+        const newDocs = files.map(file => ({
+            raw: file,
             preview: URL.createObjectURL(file)
         }));
-        setDocuments([...documents, ...newDocs]);
+        setDocuments(prev => [...prev, ...newDocs]);
     };
 
     const removeImage = (index) => {
-        const updatedImages = [...images];
-        updatedImages.splice(index, 1);
-        setImages(updatedImages);
+        URL.revokeObjectURL(images[index].preview);
+        setImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const removeDoc = (index) => {
+        URL.revokeObjectURL(documents[index].preview);
+        setDocuments(prev => prev.filter((_, i) => i !== index));
     };
 
     useEffect(() => {
-        if (isMapExpanded) {
+        return () => {
+            images.forEach(img => URL.revokeObjectURL(img.preview));
+            documents.forEach(doc => URL.revokeObjectURL(doc.preview));
+        };
+    }, []);
 
-            document.body.style.overflow = 'hidden';
-        } else {
-
-            document.body.style.overflow = 'unset';
-        }
-
-
+    useEffect(() => {
+        document.body.style.overflow = isMapExpanded ? 'hidden' : 'unset';
         return () => { document.body.style.overflow = 'unset'; };
     }, [isMapExpanded]);
 
@@ -88,46 +96,55 @@ const PublicationAnnonce = () => {
                 return;
             }
 
-            if (!formData.titreBien || !formData.prix) {
+            if (!formData.titreBien || !formData.prix || !formData.numeroPaiement) {
                 alert("Veuillez remplir les champs obligatoires");
                 return;
             }
-            setLoading(true)
+
+            if (formData.numeroPaiement.length !== 9) {
+                alert("Le numéro de paiement doit comporter exactement 9 chiffres (sans le 237).");
+                return;
+            }
+
+            setLoading(true);
             const adresse = {
                 region: formData.region,
                 ville: formData.ville,
                 quartier: formData.quartier
             };
 
-            console.log("FORM DATA :", formData);
-            console.log("POSITION :", position);
-            console.log("IMAGES :", images);
-            console.log("DOCUMENTS :", documents);
+            // ✅ FIX NUMÉRO : On prépare les données modifiées pour inclure le préfixe 237 requis par le backend
+            const finalFormData = {
+                ...formData,
+                // On s'assure que la chaîne finale ressemble à "2376XXXXXXXX"
+                numeroPaiement: `237${formData.numeroPaiement}`
+            };
+
+            const rawImages = images.map(img => img.raw);
+            const rawDocuments = documents.map(doc => doc.raw);
 
             const res = await createAnnoce(
-                formData,
-                images,
+                finalFormData, // On envoie le payload corrigé avec le 237 fusionné
+                rawImages,
                 position,
                 adresse,
-                documents
+                rawDocuments
             );
 
-            console.log("SUCCESS :", res);
-            alert("Annonce publiée avec succès ");
+            alert("Annonce publiée avec succès !");
+            window.location.href = '/mes-publications';
 
         } catch (err) {
-            console.error("ERREUR :", err);
-            alert("Erreur lors de la publication");
+            console.error("ERREUR PUBLICATION :", err);
+            alert(err?.data?.message || "Erreur lors de l'envoi au serveur");
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
     };
 
     return (
         <div className="min-h-screen bg-white flex flex-col w-full font-sans text-gray-900">
-
-            {/* HEADER & STEPPER PROGRESSION */}
-
+            {/* HEADER & STEPPER */}
             <div className="bg-white w-full pt-10 pb-4">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="text-center mb-10">
@@ -160,30 +177,24 @@ const PublicationAnnonce = () => {
 
             {/* CONTENU PRINCIPAL */}
             <div className="flex-1 w-full p-6 max-w-5xl mx-auto">
-
-                {/* ETAPE 1 : DESCRIPTION */}
                 {step === 1 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
                         <div className="space-y-2">
                             <label className="text-sm font-semibold flex items-center gap-2"><Type size={16} /> Titre du Bien</label>
                             <input type="text" name='titreBien' value={formData.titreBien} placeholder="Studio moderne..." onChange={handleInputChange} required className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-colors" />
                         </div>
-
                         <div className="space-y-2">
                             <label className="text-sm font-semibold flex items-center gap-2"><DollarSign size={16} /> Prix du loyer (FCFA)</label>
                             <input type="number" name='prix' value={formData.prix} required placeholder="150 000" onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
                         </div>
-
                         <div className="space-y-2">
                             <label className="text-sm font-semibold flex items-center gap-2"><Clock size={16} /> Superficie (m²)</label>
                             <input type="number" name='superficie' value={formData.superficie} required placeholder="100" onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
                         </div>
-
                         <div className="space-y-2">
                             <label className="text-sm font-semibold flex items-center gap-2"><Home size={16} /> Nombre de Pièces</label>
                             <input type="number" name='nbrePiece' value={formData.nbrePiece} required placeholder="5" onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
                         </div>
-
                         <div className="space-y-2 md:col-span-2">
                             <label className="text-sm font-semibold flex items-center gap-2"><AlignLeft size={16} /> Description</label>
                             <textarea rows="4" name='description' value={formData.description} required placeholder="Détails importants..." onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83] resize-none"></textarea>
@@ -191,76 +202,56 @@ const PublicationAnnonce = () => {
                     </div>
                 )}
 
-                {/* ETAPE 2 : COMPLÉMENTAIRE */}
                 {step === 2 && (
                     <div className="space-y-8 animate-in fade-in duration-500">
+                        {/* Photos Logement */}
                         <div className="space-y-4">
                             <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500">Photos du logement</h3>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                                 {images.map((img, i) => (
                                     <div key={i} className="aspect-square rounded-lg overflow-hidden border border-gray-100 relative group">
                                         <img src={img.preview} className="w-full h-full object-cover" alt="" />
-                                        <button
-                                            onClick={() => removeImage(i)}
-                                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                                        >
-                                            <X size={14} />
-                                        </button>
+                                        <button onClick={() => removeImage(i)} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"><X size={14} /></button>
                                     </div>
                                 ))}
                                 <label className="aspect-square border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors group">
                                     <Plus className="text-gray-400 group-hover:text-[#007b83]" size={24} />
-                                    <input type="file" multiple className="hidden" onChange={handleImageUpload} />
-                                </label>
-                            </div>
-                        </div>
-                        <div className="space-y-4">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500">Photos des Documents du logement</h3>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                                {documents.map((img, i) => (
-                                    <div key={i} className="aspect-square rounded-lg overflow-hidden border border-gray-100 relative group">
-                                        <img src={img.preview} className="w-full h-full object-cover" alt="" />
-                                        <button
-                                            onClick={() => removeImage(i)}
-                                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-                                ))}
-                                <label className="aspect-square border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors group">
-                                    <Plus className="text-gray-400 group-hover:text-[#007b83]" size={24} />
-                                    <input type="file" multiple className="hidden" onChange={handleDocUpload} />
+                                    <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} />
                                 </label>
                             </div>
                         </div>
 
+                        {/* Documents Logement */}
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500">Photos des Documents du logement</h3>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                                {documents.map((doc, i) => (
+                                    <div key={i} className="aspect-square rounded-lg overflow-hidden border border-gray-100 relative group">
+                                        <img src={doc.preview} className="w-full h-full object-cover" alt="" />
+                                        <button onClick={() => removeDoc(i)} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"><X size={14} /></button>
+                                    </div>
+                                ))}
+                                <label className="aspect-square border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors group">
+                                    <Plus className="text-gray-400 group-hover:text-[#007b83]" size={24} />
+                                    <input type="file" multiple accept="image/*" className="hidden" onChange={handleDocUpload} />
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Selects de Typologie */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold">Type de Publication</label>
-                                <select
-                                    name="typePublication"
-                                    value={formData.typePublication}
-                                    onChange={handleInputChange}
-                                    className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] appearance-none cursor-pointer"
-                                    required
-                                >
+                                <select name="typePublication" value={formData.typePublication} onChange={handleInputChange} className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] cursor-pointer" required>
                                     <option value="" disabled>-- Choisir une option --</option>
                                     <option value="VENTE">VENTE</option>
                                     <option value="LOCATION">LOCATION</option>
                                     <option value="BAIL">BAIL</option>
                                 </select>
                             </div>
-
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold">Type Bien Immobilier</label>
-                                <select
-                                    name='typeBienImmobilier'
-                                    value={formData.typeBienImmobilier}
-                                    onChange={handleInputChange}
-                                    className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] appearance-none cursor-pointer"
-                                    required
-                                >
+                                <select name='typeBienImmobilier' value={formData.typeBienImmobilier} onChange={handleInputChange} className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] cursor-pointer" required>
                                     <option value="" disabled>-- Choisir une option --</option>
                                     <option value="APPARTEMENT">APPARTEMENT</option>
                                     <option value="MAISON">MAISON</option>
@@ -273,66 +264,41 @@ const PublicationAnnonce = () => {
                                     <option value="CHAMBRE">CHAMBRE</option>
                                 </select>
                             </div>
-
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold">Categorie du Bien </label>
-                                <select
-                                    name='categorie'
-                                    value={formData.categorie}
-                                    onChange={handleInputChange}
-                                    className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] appearance-none cursor-pointer"
-                                    required
-                                >
+                                <label className="text-sm font-semibold">Catégorie du Bien</label>
+                                <select name='categorie' value={formData.categorie} onChange={handleInputChange} className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] cursor-pointer" required>
                                     <option value="" disabled>-- Choisir une option --</option>
                                     <option value="MEUBLE">MEUBLE</option>
                                     <option value="NON_MEUBLE">NON_MEUBLE</option>
-
                                 </select>
                             </div>
-
                             <div className="mb-5 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Numéro de paiement (Mobile Money/Orange Money) <span className="text-red-500">*</span>
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Numéro de paiement (MoMo/Orange) <span className="text-red-500">*</span></label>
                                 <div className="relative flex items-center">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 font-semibold text-sm">+237</span>
-                                    <Smartphone className="absolute left-16 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                    <input
-                                        type='number'
-                                        name='numeroPaiement'
-                                        value={formData.numeroPaiement}
-                                        onChange={handleInputChange}
-                                        className="w-full pl-24 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-                                        placeholder="6XXXXXXXX (obligatoire)"
-                                        required
-                                        maxLength={9}
+                                    <span className="absolute left-3 text-gray-600 font-semibold text-sm">237</span>
+                                    <Smartphone className="absolute left-16 w-5 h-5 text-gray-400" />
+                                    <input 
+                                        type='number' 
+                                        name='numeroPaiement' 
+                                        value={formData.numeroPaiement} 
+                                        onChange={handleInputChange} 
+                                        className="w-full pl-24 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500" 
+                                        placeholder="6XXXXXXXX" 
+                                        required 
                                     />
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 )}
 
-                {/* ETAPE 3 : POSITION */}
                 {step === 3 && (
                     <div className="space-y-8 animate-in fade-in duration-500">
-                        {/* Champs Ville et Quartier */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide">
-                                    <Navigation size={16} /> Region
-                                </label>
-                                <select
-                                    name='region'
-                                    value={formData.region}
-                                    onChange={handleInputChange}
-                                    className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] appearance-none cursor-pointer"
-                                    required
-                                >
+                                <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide"><Navigation size={16} /> Région</label>
+                                <select name='region' value={formData.region} onChange={handleInputChange} className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] cursor-pointer" required>
                                     <option value="" disabled>-- Choisir une option --</option>
-                                    {/* Valeurs corrigées selon votre message d'erreur backend */}
                                     <option value="Adamaoua_ExtremeNord">ADAMAOUA</option>
                                     <option value="YAOUNDE_Centre">CENTRE</option>
                                     <option value="Bertoua_Est">EST</option>
@@ -345,136 +311,52 @@ const PublicationAnnonce = () => {
                                     <option value="Buea_SudOuest">SUD-OUEST</option>
                                 </select>
                             </div>
-
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide">
-                                    <Navigation size={16} /> Ville
-                                </label>
-                                <input
-                                    type="text"
-                                    name='ville'
-                                    value={formData.ville}
-                                    onChange={handleInputChange}
-                                    placeholder="Ex: Yaoundé, Douala..."
-                                    className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-all shadow-sm"
-                                />
+                                <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide"><Navigation size={16} /> Ville</label>
+                                <input type="text" name='ville' value={formData.ville} onChange={handleInputChange} placeholder="Ex: Yaoundé..." className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
                             </div>
-
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide">
-                                    <MapPin size={16} /> Quartier
-                                </label>
-                                <input
-                                    type="text"
-                                    name='quartier'
-                                    value={formData.quartier}
-                                    onChange={handleInputChange}
-                                    placeholder="Ex: Bastos, Bonapriso..."
-                                    className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-all shadow-sm"
-                                />
+                                <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide"><MapPin size={16} /> Quartier</label>
+                                <input type="text" name='quartier' value={formData.quartier} onChange={handleInputChange} placeholder="Ex: Bastos..." className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
                             </div>
                         </div>
 
-                        {/* Cadre de la Carte */}
+                        {/* Cadre Cartographie */}
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">
-                                    Localisation précise (Cliquez sur la carte)
-                                </h3>
-
-                                <button
-                                    onClick={() => setIsMapExpanded(!isMapExpanded)}
-                                    className={`flex items-center gap-2 text-[10px] font-bold transition-all ${isMapExpanded
-                                        ? 'fixed top-6 right-6 z-[100001] bg-[#1a2b3c] text-white shadow-2xl px-6 py-3 rounded-2xl border border-white/10 hover:scale-105 active:scale-95'
-                                        : 'relative z-10 text-[#007b83] hover:bg-teal-50 px-3 py-1.5 rounded-full'
-                                        }`}
-                                >
-                                    {isMapExpanded ? <><Minimize2 size={14} /> QUITTER LE PLEIN ÉCRAN</> : <><Maximize2 size={14} /> PLEIN ÉCRAN</>}
+                                <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Localisation précise (Cliquez sur la carte)</h3>
+                                <button onClick={() => setIsMapExpanded(!isMapExpanded)} className={`flex items-center gap-2 text-[10px] font-bold transition-all ${isMapExpanded ? 'fixed top-6 right-6 z-[100001] bg-[#1a2b3c] text-white px-6 py-3 rounded-2xl' : 'relative z-10 text-[#007b83]'}`}>
+                                    {isMapExpanded ? <><Minimize2 size={14} /> QUITTER</> : <><Maximize2 size={14} /> PLEIN ÉCRAN</>}
                                 </button>
                             </div>
 
-                            {/* Barre de recherche - Adaptée pour le plein écran */}
                             <div className={`transition-all ${isMapExpanded ? 'fixed top-8 left-1/2 -translate-x-1/2 z-[100001] w-full max-w-md px-4' : 'relative z-30'}`}>
                                 <SearchLocation setMapPosition={setMapPosition} />
                             </div>
 
-                            {/* Conteneur de la Carte */}
-                            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isMapExpanded
-                                ? 'fixed inset-0 z-[100000] bg-white w-screen h-screen rounded-none'
-                                : 'relative w-full aspect-video md:aspect-[21/9] rounded-[2.5rem] border-4 border-white shadow-xl shadow-gray-200/50'
-                                }`}>
-
-                                <LocationPicker
-                                    setPosition={setPosition}
-                                    mapPosition={mapPosition}
-                                    isExpanded={isMapExpanded}
-                                />
-
-                                {/* Badge de Coordonnées (Temps Réel) */}
+                            <div className={`transition-all duration-500 overflow-hidden ${isMapExpanded ? 'fixed inset-0 z-[100000] bg-white w-screen h-screen' : 'relative w-full aspect-video md:aspect-[21/9] rounded-[2.5rem] border-4 border-white shadow-xl'}`}>
+                                <LocationPicker setPosition={setPosition} mapPosition={mapPosition} isExpanded={isMapExpanded} />
                                 {position && (
-                                    <div className={`absolute z-[100001] bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-white transition-all ${isMapExpanded
-                                        ? 'bottom-10 right-10'
-                                        : 'bottom-6 left-6'
-                                        }`}>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Coordonnées</p>
-                                        <code className="text-xs font-bold text-[#007b83] font-mono">
-                                            {position.lat.toFixed(5)} , {position.lng.toFixed(5)}
-                                        </code>
+                                    <div className={`absolute z-[100001] bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-xl border ${isMapExpanded ? 'bottom-10 right-10' : 'bottom-6 left-6'}`}>
+                                        <code className="text-xs font-bold text-[#007b83] font-mono">{position.lat.toFixed(5)} , {position.lng.toFixed(5)}</code>
                                     </div>
                                 )}
                             </div>
-
-                            {!isMapExpanded && (
-                                <p className="text-center text-[11px] text-gray-400 italic">
-                                    Astuce : Recherchez votre quartier puis cliquez précisément sur l'emplacement du bien.
-                                </p>
-                            )}
                         </div>
                     </div>
                 )}
 
-                {/* NAVIGATION BAS DE PAGE */}
+                {/* STEPS COMMANDS */}
                 <div className="mt-12 flex items-center justify-between border-t border-gray-100 pt-8">
                     {step > 1 ? (
-                        <button
-                            type="button"
-                            disabled={loading}
-                            onClick={() => setStep(step - 1)}
-                            className="px-6 py-3 text-gray-600 font-semibold hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-                        >
-                            <ChevronLeft size={20} /> Précédent
-                        </button>
+                        <button type="button" disabled={loading} onClick={() => setStep(step - 1)} className="px-6 py-3 text-gray-600 font-semibold flex items-center gap-2"><ChevronLeft size={20} /> Précédent</button>
                     ) : <div />}
-
                     <button
                         disabled={loading}
-                        onClick={() => {
-                            if (step < 3) {
-                                setStep(step + 1);
-                            } else {
-                                handleSubmit();
-                            }
-                        }}
-                        className="px-8 py-3 bg-[#007b83] text-white rounded-lg font-bold shadow-sm hover:bg-[#00666d] transition-all flex items-center gap-2 disabled:bg-[#007b83]/70 disabled:cursor-not-allowed"
+                        onClick={() => { if (step < 3) { setStep(step + 1); } else { handleSubmit(); } }}
+                        className="px-8 py-3 bg-[#007b83] text-white rounded-lg font-bold flex items-center gap-2 disabled:opacity-70"
                     >
-                        {step === 3 ? (
-                            loading ? (
-                                <>
-                                    <Loader2 size={20} className="animate-spin" />
-                                    PUBLICATION...
-                                </>
-                            ) : (
-                                <>
-                                    <Check size={20} /> 
-                                    TERMINER
-                                </>
-                            )
-                        ) : (
-                            <>
-                                Suivant 
-                                <ChevronRight size={20} />
-                            </>
-                        )}
+                        {step === 3 ? (loading ? <><Loader2 size={20} className="animate-spin" /> PUBLICATION...</> : <><Check size={20} /> TERMINER</>) : <><>Suivant</><ChevronRight size={20} /></>}
                     </button>
                 </div>
             </div>

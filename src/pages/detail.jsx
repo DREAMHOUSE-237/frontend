@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin, DollarSign, Key, Calendar, Users,
-  MessageSquare, Send, User,
+  MessageSquare, Send, User, FileText, Navigation,
   Maximize2, Minimize2, Home, Loader2,
   ChevronLeft, ChevronRight, X, Heart, Trash2, Reply
 } from 'lucide-react';
@@ -19,10 +19,18 @@ const Details = () => {
   const [isMapMaximized, setIsMapMaximized] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [lightboxMode, setLightboxMode] = useState('images'); 
+  const [activeDoc, setActiveDoc] = useState(0);
   const [coords, setCoords] = useState(null); 
   const [replyingTo, setReplyingTo] = useState(null); 
   const [replyText, setReplyText] = useState("");
   const navigate = useNavigate();
+
+  // États de suivi GPS et Itinéraire manuel
+  const [userCoords, setUserCoords] = useState(null);
+  const [isTracking, setIsTracking] = useState(false);
+  const [userQuery, setUserQuery] = useState("");
+  const [routeLoading, setRouteLoading] = useState(false);
 
   useEffect(() => {
     const fetchBien = async () => {
@@ -49,32 +57,96 @@ const Details = () => {
     fetchBien();
   }, [id]);
 
-  // Déclencheur global pour forcer le rafraîchissement de la carte Leaflet lors du plein écran
+  // Hook d'écoute GPS matériel natif
+  useEffect(() => {
+    let watchId = null;
+
+    if (isTracking && navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setUserCoords({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error("Erreur d'accès GPS :", error);
+          alert("Veuillez activer la localisation de votre appareil pour utiliser le guidage.");
+          setIsTracking(false);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0
+        }
+      );
+    }
+
+    return () => {
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [isTracking]);
+
   useEffect(() => {
     if (isMapMaximized) {
-      const timer = setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
-      }, 100);
+      const timer = setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 100);
       return () => clearTimeout(timer);
     }
   }, [isMapMaximized]);
 
+  // Calcul d'itinéraire basé sur la saisie de texte du client
+  const handleCalculateRoute = async (e) => {
+    e.preventDefault();
+    if (!userQuery.trim()) return;
+
+    setRouteLoading(true);
+    setIsTracking(false); // Coupe le tracking GPS en direct pour privilégier l'itinéraire manuel
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(userQuery)}`
+      );
+      const data = await response.json();
+
+      if (data.length > 0) {
+        setUserCoords({
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        });
+        setIsMapMaximized(true); // Maximise pour voir confortablement le grand tracé de route
+      } else {
+        alert("Lieu introuvable. Soyez plus précis (ex: Simbock, Yaoundé).");
+      }
+    } catch (error) {
+      console.error("Erreur itinéraire textuel :", error);
+      alert("Impossible de calculer le trajet.");
+    } finally {
+      setRouteLoading(false);
+    }
+  };
+
+  const toggleGpsTracking = () => {
+    if (!isTracking) {
+      setUserQuery(""); // Nettoie la recherche textuelle
+      setIsTracking(true);
+      setIsMapMaximized(true);
+    } else {
+      setIsTracking(false);
+      setUserCoords(null);
+    }
+  };
+
   const handleSendComment = async () => {
     const userId = localStorage.getItem('userid');
     const token = localStorage.getItem('token');
-
     if (!userId || !token) {
       alert("Vous devez être connecté pour publier un commentaire.");
       navigate('/connexion');
       return;
     }
-
     if (!commentText.trim()) return;
 
     try {
       setSending(true);
       const result = await CommentService.create(id, commentText);
-
       if (result.success) {
         setComments([result.data, ...comments]);
         setCommentText("");
@@ -121,31 +193,57 @@ const Details = () => {
   };
 
   const nextImage = useCallback(() => {
-    if (!bien?.images || bien.images.length === 0) return;
-    setActiveImg((prev) => (prev === bien.images.length - 1 ? 0 : prev + 1));
-  }, [bien]);
+    if (lightboxMode === 'images') {
+      if (!bien?.images || bien.images.length === 0) return;
+      setActiveImg((prev) => (prev === bien.images.length - 1 ? 0 : prev + 1));
+    } else {
+      const documentsList = bien?.docuements || bien?.documents || [];
+      if (documentsList.length === 0) return;
+      setActiveDoc((prev) => (prev === documentsList.length - 1 ? 0 : prev + 1));
+    }
+  }, [bien, lightboxMode]);
 
   const prevImage = useCallback(() => {
-    if (!bien?.images || bien.images.length === 0) return;
-    setActiveImg((prev) => (prev === 0 ? bien.images.length - 1 : prev - 1));
-  }, [bien]);
+    if (lightboxMode === 'images') {
+      if (!bien?.images || bien.images.length === 0) return;
+      setActiveImg((prev) => (prev === 0 ? bien.images.length - 1 : prev - 1));
+    } else {
+      const documentsList = bien?.docuements || bien?.documents || [];
+      if (documentsList.length === 0) return;
+      setActiveDoc((prev) => (prev === 0 ? documentsList.length - 1 : prev - 1));
+    }
+  }, [bien, lightboxMode]);
 
   if (loading) return <div className="h-screen flex items-center justify-center italic text-gray-400">Chargement des détails...</div>;
   if (!bien) return <div className="h-screen flex items-center justify-center">Bien introuvable.</div>;
 
-  const images = bien.images && bien.images.length > 0 ? bien.images : [null];
+  const images = bien.images && bien.images.length > 0 ? bien.images : [];
+  const docs = bien.docuements || bien.documents || [];
+
+  // ✅ FIX STRUCTURE WHATSAPP : Extraction propre de maximum deux images du catalogue Cloudinary
+  const firstImageUrl = images[0] ? BienService.formatImageUrl(images[0]) : '';
+  const secondImageUrl = images[1] ? BienService.formatImageUrl(images[1]) : '';
+
+  let imageSectionMessage = '';
+  if (firstImageUrl && secondImageUrl) {
+    imageSectionMessage = `\n\nVoici les images du bien :\n1. ${firstImageUrl}\n2. ${secondImageUrl}`;
+  } else if (firstImageUrl) {
+    imageSectionMessage = `\n\nVoici l'image du bien :\n${firstImageUrl}`;
+  }
+
+  const whatsappMessage = `Bonjour, je suis intéressé par votre annonce "${bien.titreBien}" située à ${bien.quartier} (${bien.prix?.toLocaleString()} FCFA).${imageSectionMessage}\n\nEst-elle toujours disponible ?`;
 
   return (
     <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor: '#f8f6f2' }}>
       <div className="max-w-screen-2xl mx-auto p-4 md:p-10 font-sans text-gray-800">
 
-        {/* Lightbox Galerie Plein Écran */}
+        {/* Lightbox */}
         {showLightbox && (
           <div className="fixed inset-0 z-[100000] bg-black/95 flex items-center justify-center p-4">
             <button onClick={() => setShowLightbox(false)} className="absolute top-6 right-6 text-white/70 hover:text-white"><X size={40} /></button>
             <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronLeft size={32} /></button>
             <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronRight size={32} /></button>
-            <img src={BienService.formatImageUrl(images[activeImg])} className="max-h-[90vh] max-w-[90vw] object-contain" alt="" />
+            <img src={BienService.formatImageUrl(lightboxMode === 'images' ? images[activeImg] : docs[activeDoc])} className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg" alt="Média" />
           </div>
         )}
 
@@ -153,13 +251,18 @@ const Details = () => {
         {isMapMaximized && coords && (
           <div className="fixed inset-0 z-[200000] bg-white w-screen h-screen">
             <button
-              onClick={() => setIsMapMaximized(false)}
+              onClick={() => { setIsMapMaximized(false); setIsTracking(false); setUserCoords(null); }}
               className="absolute top-6 right-6 z-[200005] bg-gray-900 text-white p-3 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center justify-center"
             >
               <Minimize2 size={24} />
             </button>
             <div className="w-full h-full">
-              <LocationPicker mapPosition={coords} readOnly={true} />
+              <LocationPicker 
+                mapPosition={[coords.lat, coords.lng]} 
+                readOnly={true} 
+                userCoords={userCoords} 
+                isExpanded={isMapMaximized}
+              />
             </div>
           </div>
         )}
@@ -167,42 +270,23 @@ const Details = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
           {/* ZONE GAUCHE */}
           <div className="lg:col-span-8 space-y-10">
-
-            {/* GALERIE D'IMAGES — FIXE EN RELATIVE */}
+            {/* Galerie */}
             <div className="space-y-4">
               <div className="relative group overflow-hidden rounded-xl bg-gray-200 aspect-[16/9] shadow-sm">
-                <img
-                  src={BienService.formatImageUrl(images[activeImg])}
-                  className="w-full h-full object-cover transition-all duration-700"
-                  alt={bien.titreBien}
-                />
-                
-                {/* Flèches de navigation au survol */}
+                <img src={images.length > 0 ? BienService.formatImageUrl(images[activeImg]) : "https://via.placeholder.com/800x450?text=Aucune+image"} className="w-full h-full object-cover transition-all duration-700" alt={bien.titreBien} />
                 <div className="absolute inset-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
                   <button onClick={prevImage} className="p-3 bg-white/80 rounded-full shadow pointer-events-auto hover:bg-white"><ChevronLeft size={24} /></button>
                   <button onClick={nextImage} className="p-3 bg-white/80 rounded-full shadow pointer-events-auto hover:bg-white"><ChevronRight size={24} /></button>
                 </div>
-                
-                {/* FIX DU BOUTON AGRANDIR IMAGE : Raccroché proprement au conteneur de l'image */}
-                <button 
-                  onClick={() => setShowLightbox(true)} 
-                  className="absolute bottom-6 right-6 bg-black/60 text-white p-3 rounded-xl hover:bg-black transition-colors z-20 flex items-center justify-center shadow-lg"
-                  title="Agrandir l'image"
-                >
+                <button onClick={() => { setLightboxMode('images'); setShowLightbox(true); }} className="absolute bottom-6 right-6 bg-black/60 text-white p-3 rounded-xl hover:bg-black transition-colors z-20 flex items-center justify-center shadow-lg">
                   <Maximize2 size={20} />
                 </button>
               </div>
 
               {/* Miniatures */}
               <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                {images.map((img, i) => (
-                  <img
-                    key={i}
-                    src={BienService.formatImageUrl(img)}
-                    onClick={() => setActiveImg(i)}
-                    className={`w-32 h-20 shrink-0 object-cover rounded-lg cursor-pointer border-2 transition-all ${activeImg === i ? 'border-[#007b83] scale-105 shadow-md' : 'border-transparent opacity-60'}`}
-                    alt={`Vue ${i}`}
-                  />
+                {images.length > 0 && images.map((img, i) => (
+                  <img key={i} src={BienService.formatImageUrl(img)} onClick={() => setActiveImg(i)} className={`w-32 h-20 shrink-0 object-cover rounded-lg cursor-pointer border-2 transition-all ${activeImg === i ? 'border-[#007b83] scale-105 shadow-md' : 'border-transparent opacity-60'}`} alt={`Vue ${i}`} />
                 ))}
               </div>
             </div>
@@ -225,149 +309,112 @@ const Details = () => {
               <InfoLine icon={<Users size={18} />} label="Pièces" value={bien.nbrePiece} />
             </div>
 
-            {/* Description du Bien */}
-            <div className="space-y-6">
-              <h3 className="text-center text-gray-400 text-sm uppercase tracking-[0.3em] italic font-bold">Description du Bien</h3>
+            {/* Description */}
+            <div className="space-y-4">
+              <h3 className="text-gray-400 text-sm uppercase tracking-[0.3em] italic font-bold text-center">Description du Bien</h3>
               <div className="text-base text-gray-600 leading-relaxed max-w-3xl mx-auto text-center italic">
-                <p className="whitespace-pre-line bg-white/40 p-6 rounded-2xl border border-white/20">
-                  {bien.description || "Aucune description disponible."}
-                </p>
+                <p className="whitespace-pre-line bg-white/40 p-6 rounded-2xl border border-white/20">{bien.description || "Aucune description disponible."}</p>
               </div>
             </div>
+
+            {/* Section Documents */}
+            {docs.length > 0 && (
+              <div className="pt-6 space-y-4 border-t border-gray-200/60">
+                <h3 className="text-gray-400 text-sm uppercase tracking-[0.2em] italic font-bold flex items-center gap-2">
+                  <FileText size={16} className="text-[#007b83]" /> Documents justificatifs du logement ({docs.length})
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {docs.map((doc, idx) => (
+                    <div key={idx} onClick={() => { setActiveDoc(idx); setLightboxMode('documents'); setShowLightbox(true); }} className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-gray-100 border border-gray-200 cursor-pointer shadow-sm hover:shadow-md transition-all group">
+                      <img src={BienService.formatImageUrl(doc)} alt={`Document ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <span className="text-white text-[11px] font-bold uppercase tracking-wider bg-black/50 px-3 py-1.5 rounded-xl flex items-center gap-1"><Maximize2 size={12} /> Ouvrir</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ZONE DROITE */}
           <div className="lg:col-span-4 space-y-12">
-
-            {/* Carte Standard Miniature */}
-            <div className="relative h-80 z-10">
-              <div className="relative h-full w-full rounded-3xl shadow-xl overflow-hidden border-4 border-white">
-                <button
-                  onClick={() => setIsMapMaximized(true)}
-                  className="absolute top-4 right-4 z-[50] bg-white text-gray-800 p-2.5 rounded-full shadow-lg hover:scale-110 transition-transform flex items-center justify-center"
-                >
-                  <Maximize2 size={18} />
-                </button>
-                {coords && !isMapMaximized && (
-                  <LocationPicker
-                    mapPosition={coords}
-                    readOnly={true}
-                  />
-                )}
+            <div className="space-y-4">
+              <div className="relative h-80 z-10">
+                <div className="relative h-full w-full rounded-3xl shadow-xl overflow-hidden border-4 border-white">
+                  <button onClick={() => setIsMapMaximized(true)} className="absolute top-4 right-4 z-[50] bg-white text-gray-800 p-2.5 rounded-full shadow-lg hover:scale-110 transition-transform flex items-center justify-center">
+                    <Maximize2 size={18} />
+                  </button>
+                  {coords && !isMapMaximized && (
+                    <LocationPicker mapPosition={[coords.lat, coords.lng]} readOnly={true} userCoords={userCoords} />
+                  )}
+                </div>
               </div>
+
+              {/* FORMULAIRE DE CALCUL D'ITINÉRAIRE PAR SAISIE TEXTUELLE */}
+              <form onSubmit={handleCalculateRoute} className="flex gap-2 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm relative z-20">
+                <div className="relative flex-1 flex items-center">
+                  <Navigation className="absolute left-3 text-[#007b83]" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Votre départ (ex: Bastos, Yaoundé)..."
+                    value={userQuery}
+                    onChange={(e) => setUserQuery(e.target.value)}
+                    className="w-full pl-9 pr-2 py-2.5 bg-transparent outline-none text-xs font-medium"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={routeLoading || !userQuery.trim()}
+                  className="bg-[#1a2b3c] text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-[#007b83] transition-colors disabled:bg-gray-200"
+                >
+                  {routeLoading ? "..." : "Tracer"}
+                </button>
+              </form>
             </div>
 
             {/* Section Contact Responsable */}
             <div className="border border-white bg-white/80 rounded-3xl p-8 text-center space-y-6 shadow-md">
-              <div className="w-20 h-20 bg-gray-100 rounded-full mx-auto flex items-center justify-center border border-white shadow-inner">
-                <User size={40} className="text-[#007b83]" />
-              </div>
+              <div className="w-20 h-20 bg-gray-100 rounded-full mx-auto flex items-center justify-center border border-white shadow-inner"><User size={40} className="text-[#007b83]" /></div>
               <div>
-                <h3 className="font-bold text-xl italic uppercase tracking-tighter text-gray-900">
-                  Responsable du bien
-                </h3>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
-                  Réponse rapide
-                </p>
+                <h3 className="font-bold text-xl italic uppercase tracking-tighter text-gray-900">Responsable du bien</h3>
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Réponse rapide</p>
               </div>
-              <a
-                href={`https://wa.me/+237${bien.numeroPaiement?.replace(/\s+/g, '')}?text=${encodeURIComponent(
-                  `Bonjour, je suis intéressé par votre annonce "${bien.titreBien}" située à ${bien.quartier} (${bien.prix} FCFA). Est-elle toujours disponible ?`
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full bg-[#007b83] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-[#00666d] transition-all shadow-lg uppercase text-sm"
-              >
+              <a href={`https://wa.me/+237${bien.numeroPaiement?.replace(/\s+/g, '')}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer" className="w-full bg-[#007b83] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-[#00666d] transition-all shadow-lg uppercase text-sm">
                 <MessageSquare size={20} /> WhatsApp : {bien.numeroPaiement}
               </a>
             </div>
 
             {/* SECTION COMMENTAIRES */}
             <div className="space-y-6">
-              <h3 className="font-bold text-xs uppercase text-gray-400 tracking-[0.2em] italic border-b border-gray-200 pb-4">
-                Discussions ({comments.length})
-              </h3>
-
+              <h3 className="font-bold text-xs uppercase text-gray-400 tracking-[0.2em] italic border-b border-gray-200 pb-4">Discussions ({comments.length})</h3>
               <div className="max-h-[500px] overflow-y-auto pr-3 space-y-6 scrollbar-thin">
                 {comments.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic text-center py-4">
-                    Aucun commentaire pour le moment.
-                  </p>
+                  <p className="text-xs text-gray-400 italic text-center py-4">Aucun commentaire pour le moment.</p>
                 ) : (
                   comments.map(c => (
                     <div key={c.id} className="text-xs border-b border-white pb-6 italic last:border-0">
                       <div className="flex justify-between font-bold text-gray-700 mb-2">
-                        <span className="text-sm text-[#007b83]">
-                          {c.author.id === localStorage.getItem('userid')
-                            ? localStorage.getItem('userEmail')
-                            : `Utilisateur #${c.author.id.substring(0, 8)}`}
-                        </span>
-                        <span className="font-normal text-gray-300">
-                          {new Date(c.createdAt).toLocaleDateString()}
-                        </span>
+                        <span className="text-sm text-[#007b83]">{c.author.id === localStorage.getItem('userid') ? localStorage.getItem('userEmail') : `Utilisateur #${c.author.id.substring(0, 8)}`}</span>
+                        <span className="font-normal text-gray-300">{new Date(c.createdAt).toLocaleDateString()}</span>
                       </div>
-
-                      <p className={`text-gray-500 leading-relaxed text-sm bg-white/30 p-3 rounded-lg ${c.status === 'tombstoned' ? 'opacity-50 italic' : ''}`}>
-                        {c.status === 'tombstoned' ? "[Ce commentaire a été supprimé]" : `"${c.content}"`}
-                      </p>
-
+                      <p className={`text-gray-500 leading-relaxed text-sm bg-white/30 p-3 rounded-lg ${c.status === 'tombstoned' ? 'opacity-50 italic' : ''}`}>{c.status === 'tombstoned' ? "[Ce commentaire a été supprimé]" : `"${c.content}"`}</p>
                       <div className="flex gap-6 mt-3 px-1 items-center text-[10px] font-black uppercase tracking-tighter">
-                        <button
-                          onClick={() => handleLike(c.id)}
-                          className={`flex items-center gap-1 transition-colors ${c.liked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
-                        >
-                          <Heart size={12} fill={c.liked ? "currentColor" : "none"} /> {c.likeCount} LIKES
-                        </button>
-
-                        {(!c.parentId || c.parentId === null) && c.status !== 'tombstoned' && (
-                          <button
-                            onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
-                            className="flex items-center gap-1 text-gray-400 hover:text-[#007b83]"
-                          >
-                            <Reply size={12} /> Répondre
-                          </button>
-                        )}
-
-                        {c.author.id === localStorage.getItem('userid') && c.status !== 'tombstoned' && (
-                          <button
-                            onClick={() => handleDelete(c.id)}
-                            className="flex items-center gap-1 text-gray-300 hover:text-red-600 ml-auto"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        )}
+                        <button onClick={() => handleLike(c.id)} className={`flex items-center gap-1 transition-colors ${c.liked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}><Heart size={12} fill={c.liked ? "currentColor" : "none"} /> {c.likeCount} LIKES</button>
+                        {(!c.parentId || c.parentId === null) && c.status !== 'tombstoned' && (<button onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)} className="flex items-center gap-1 text-gray-400 hover:text-[#007b83]"><Reply size={12} /> Répondre</button>)}
+                        {c.author.id === localStorage.getItem('userid') && c.status !== 'tombstoned' && (<button onClick={() => handleDelete(c.id)} className="flex items-center gap-1 text-gray-300 hover:text-red-600 ml-auto"><Trash2 size={15} /></button>)}
                       </div>
-
                       {replyingTo === c.id && (
                         <div className="ml-6 mt-4 flex gap-2 animate-in slide-in-from-top-2">
-                          <input
-                            className="flex-1 border-b border-[#007b83] p-2 text-xs outline-none bg-transparent italic"
-                            placeholder="Répondre..."
-                            value={replyText}
-                            onChange={(e) => setReplyText(e.target.value)}
-                          />
-                          <button
-                            onClick={() => handleSendReply(c.id)}
-                            disabled={!replyText.trim()}
-                            className="text-[#007b83] font-bold"
-                          >
-                            <Send size={14} />
-                          </button>
+                          <input className="flex-1 border-b border-[#007b83] p-2 text-xs outline-none bg-transparent italic" placeholder="Écrire une réponse..." value={replyText} onChange={(e) => setReplyText(e.target.value)} />
+                          <button onClick={() => handleSendReply(c.id)} disabled={!replyText.trim()} className="text-[#007b83] font-bold"><Send size={14} /></button>
                         </div>
                       )}
-
                       {c.replies && c.replies.length > 0 && (
                         <div className="ml-6 mt-4 space-y-4 border-l-2 border-[#007b83]/10 pl-4">
                           {c.replies.map(reply => (
                             <div key={reply.id} className="opacity-80">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-[#007b83] font-bold">
-                                  {reply.author.id === localStorage.getItem('userid') ? "Moi" : "Réponse"}
-                                </span>
-                                <span className="text-[10px] text-gray-300">
-                                  {new Date(reply.createdAt).toLocaleDateString()}
-                                </span>
-                              </div>
+                              <div className="flex justify-between items-center mb-1"><span className="text-[#007b83] font-bold">{reply.author.id === localStorage.getItem('userid') ? "Moi" : "Réponse"}</span><span className="text-[10px] text-gray-300">{new Date(reply.createdAt).toLocaleDateString()}</span></div>
                               <p className="text-gray-500 italic">"{reply.content}"</p>
                             </div>
                           ))}
@@ -378,21 +425,9 @@ const Details = () => {
                 )}
               </div>
 
-              {/* Écrire un commentaire */}
               <div className="pt-4 space-y-4">
-                <textarea
-                  className="w-full border border-white p-4 text-sm rounded-xl outline-none focus:border-[#007b83] transition bg-white/60 italic shadow-inner"
-                  placeholder="Écrire un commentaire..."
-                  rows="3"
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  disabled={sending}
-                />
-                <button
-                  onClick={handleSendComment}
-                  disabled={sending || !commentText.trim()}
-                  className="w-full bg-gray-800 text-white py-4 rounded-xl text-sm font-bold uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg"
-                >
+                <textarea className="w-full border border-white p-4 text-sm rounded-xl outline-none focus:border-[#007b83] transition bg-white/60 italic shadow-inner" placeholder="Écrire un commentaire..." rows="3" value={commentText} onChange={(e) => setCommentText(e.target.value)} disabled={sending} />
+                <button onClick={handleSendComment} disabled={sending || !commentText.trim()} className="w-full bg-gray-800 text-white py-4 rounded-xl text-sm font-bold uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg">
                   {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                   {sending ? "Envoi..." : "Envoyer"}
                 </button>
@@ -407,10 +442,7 @@ const Details = () => {
 
 const InfoLine = ({ icon, label, value }) => (
   <div className="flex items-center justify-between py-3 px-4 hover:bg-white/40 rounded-lg transition-colors">
-    <div className="flex items-center gap-4 text-gray-400">
-      <span className="text-[#007b83]">{icon}</span>
-      <span className="text-sm font-light italic">{label}</span>
-    </div>
+    <div className="flex items-center gap-4 text-gray-400"><span className="text-[#007b83]">{icon}</span><span className="text-sm font-light italic">{label}</span></div>
     <span className="text-sm font-semibold text-gray-700 italic">{value}</span>
   </div>
 );

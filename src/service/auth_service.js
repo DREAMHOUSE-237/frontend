@@ -216,9 +216,16 @@ export const BienService = {
     return await response.json();
   },
 
-  // Helper pour l'URL des images
+  // ✅ FIX CLOUDINARY : Renvoie directement l'URL absolue stockée en base de données
   formatImageUrl: (imageName) => {
-    return `${API_URL}/PUBLICATION-SERVICE/upload/${imageName}`;
+    if (!imageName) return "https://via.placeholder.com/400x320?text=Aucune+image";
+    
+    // Si l'image est déjà une URL complète (Cloudinary), on la retourne telle quelle
+    if (imageName.startsWith('http://') || imageName.startsWith('https://')) {
+      return imageName;
+    }
+    
+   
   }
 };
 //user service  
