@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   ChevronLeft, ChevronRight, MapPin, Layout,
   Sparkles, Type, AlignLeft, DollarSign, Clock, Check,
-  Plus, Home, X, Smartphone, Navigation, Loader2, Maximize2, Minimize2, CreditCard
+  Plus, Home, X, Smartphone, Navigation, Loader2,AlertCircle, Maximize2, Minimize2, CreditCard
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
 import SearchLocation from '../components/Map/SearchLocation';
