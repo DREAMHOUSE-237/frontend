@@ -83,7 +83,7 @@ const AuthPage = () => {
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"></div>
                 <div className="absolute bottom-20 left-16 right-16">
                     <h2 className="text-5xl font-bold text-white leading-tight mb-4">
-                        L'excellence <br /> n'attend pas.
+                        La securite <br /> n'est pas une Option.
                     </h2>
                     <p className="text-white/80 text-lg font-light max-w-md border-l-2 border-[#007b83] pl-4">
                         Rejoignez la communauté Dreamhouse et faites briller vos annonces immobilières.

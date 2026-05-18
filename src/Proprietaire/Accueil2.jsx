@@ -123,7 +123,7 @@ const ProprietaireHome = () => {
             </div>
             <h3 className="text-xl font-black text-[#1a2b3c] mb-3">Transparence tarifaire</h3>
             <p className="text-gray-500 leading-relaxed">
-              Frais de service fixes : payez seulement 5% du prix du loyer pour le type de publication si VENTRE et 10000Fcfa si LOCATION ou BAIL lors de la publication de votre annonce.
+              Frais de service fixes : payez seulement 5% du prix du loyer pour le type de publication si VENTE et 10000Fcfa si LOCATION ou BAIL lors de la publication de votre annonce.
             </p>
           </div>
 

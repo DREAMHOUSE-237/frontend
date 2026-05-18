@@ -6,28 +6,36 @@ const Equipe = () => {
     {
       id: 1,
       nom: "Votre Nom 1",
-      role: "Responsable Technique",
+      role: "Responsable du Service Authentification , les logiques de Deploiement",
       description: "Étudiant en Master 1 - Informatique, Université de Yaoundé 1.",
       image: "https://via.placeholder.com/150" 
     },
     {
       id: 2,
       nom: "Votre Nom 2",
-      role: "Responsable Design & UX",
+      role: "Responsable du Service de Publication",
       description: "Étudiant en Master 1 - Informatique, Université de Yaoundé 1.",
       image: "https://via.placeholder.com/150"
     },
     {
       id: 3,
       nom: "Votre Nom 3",
-      role: "Responsable Marketing",
+      role: "Responsable du Service User et Identity",
       description: "Étudiant en Master 1 - Informatique, Université de Yaoundé 1.",
       image: "https://via.placeholder.com/150"
     },
     {
       id: 4,
       nom: "Votre Nom 4",
-      role: "Responsable Juridique",
+      role: "Responsable du Service de Commentaire et Paiement",
+      description: "Étudiant en Master 1 - Informatique, Université de Yaoundé 1.",
+      image: "https://via.placeholder.com/150"
+    }
+    ,
+    {
+      id: 5,
+      nom: "Votre Nom 4",
+      role: "Responsable du Design UI/UX ",
       description: "Étudiant en Master 1 - Informatique, Université de Yaoundé 1.",
       image: "https://via.placeholder.com/150"
     }

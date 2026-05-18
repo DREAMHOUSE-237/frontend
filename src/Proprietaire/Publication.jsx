@@ -16,6 +16,7 @@ const PublicationAnnonce = () => {
   const [mapPosition, setMapPosition] = useState([3.848, 11.502]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false); // Indicateur de chargement pour le reverse geocoding
 
   // ÉTATS POUR LA PASSERELLE DE PAIEMENT
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -41,6 +42,64 @@ const PublicationAnnonce = () => {
     ville: '',
     quartier: ''
   });
+
+  // DICTIONNAIRE DE CORRESPONDANCE POUR LES RÉGIONS DU CAMEROUN
+  const normaliserRegion = (inputRegion) => {
+    if (!inputRegion) return '';
+    const cleanStr = inputRegion.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    if (cleanStr.includes('centre')) return 'YAOUNDE_Centre';
+    if (cleanStr.includes('littoral')) return 'Douala_Littoral';
+    if (cleanStr.includes('ouest')) {
+      if (cleanStr.includes('nord')) return 'Bamenda_NordOuest';
+      if (cleanStr.includes('sud')) return 'Buea_SudOuest';
+      return 'Bafoussam_Ouest';
+    }
+    if (cleanStr.includes('sud')) return 'Ebolowa_Sud';
+    if (cleanStr.includes('est')) return 'Bertoua_Est';
+    if (cleanStr.includes('nord')) return 'Garoua_Nord';
+    if (cleanStr.includes('extreme')) return 'Maroua_Ngaoundere';
+    if (cleanStr.includes('adamaoua')) return 'Adamaoua_ExtremeNord';
+    
+    return '';
+  };
+
+  // ✅ HOOK D'ÉCOUTE ET DE REMPLISSAGE AUTOMATIQUE AU CLIC DE LA CARTE
+  useEffect(() => {
+    if (!position) return;
+
+    const reverseGeocode = async () => {
+      try {
+        setGeoLoading(true);
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.lat}&lon=${position.lng}&addressdetails=1`
+        );
+        const data = await response.json();
+
+        if (data && data.address) {
+          const addr = data.address;
+
+          // Extraction intelligente selon les priorités Nominatim OpenStreetMap
+          const villeDetectee = addr.city || addr.town || addr.village || addr.county || '';
+          const quartierDetecte = addr.suburb || addr.neighbourhood || addr.quarter || addr.residential || addr.road || '';
+          const regionDetectee = normaliserRegion(addr.state || addr.region);
+
+          setFormData(prev => ({
+            ...prev,
+            ville: villeDetectee,
+            quartier: quartierDetecte,
+            region: regionDetectee || prev.region // Conserve l'ancienne si non reconnue
+          }));
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération de l'adresse :", error);
+      } finally {
+        setGeoLoading(false);
+      }
+    };
+
+    reverseGeocode();
+  }, [position]);
 
   // Vérifie si au moins un champ obligatoire ou structurel est vide
   const isFormInvalid = () => {
@@ -208,7 +267,6 @@ const PublicationAnnonce = () => {
         quartier: ''
       });
 
-      // Redirection finale de l'utilisateur
       window.location.href = '/mes-publications';
 
     } catch (err) {
@@ -222,7 +280,7 @@ const PublicationAnnonce = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col w-full font-sans text-gray-900 relative">
       
-      {/* POPUP DE PAIEMENT  */}
+      {/* POPUP DE PAIEMENT */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-[300000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 border border-gray-100 relative animate-in zoom-in-95 duration-200">
@@ -239,7 +297,7 @@ const PublicationAnnonce = () => {
                 <CreditCard size={24} />
               </div>
               <h2 className="text-xl font-black text-gray-900 tracking-tight">Frais de Publication</h2>
-              <p className="text-xs text-gray-400 font-medium">Finissez votre annonce en effectuant le dépôt d'activation, vous allez rececvoir un message de paiement</p>
+              <p className="text-xs text-gray-400 font-medium">Finissez votre annonce en effectuant le dépôt d'activation, vous allez recevoir un message de paiement</p>
             </div>
 
             {/* Ticket */}
@@ -430,34 +488,7 @@ const PublicationAnnonce = () => {
 
         {step === 3 && (
           <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide"><Navigation size={16} /> Région</label>
-                <select name='region' value={formData.region} onChange={handleInputChange} className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] cursor-pointer" required>
-                  <option value="" disabled>-- Choisir une option --</option>
-                  <option value="Adamaoua_ExtremeNord">ADAMAOUA</option>
-                  <option value="YAOUNDE_Centre">CENTRE</option>
-                  <option value="Bertoua_Est">EST</option>
-                  <option value="Maroua_Ngaoundere">EXTRÊME-NORD</option>
-                  <option value="Douala_Littoral">LITTORAL</option>
-                  <option value="Garoua_Nord">NORD</option>
-                  <option value="Bamenda_NordOuest">NORD-OUEST</option>
-                  <option value="Bafoussam_Ouest">OUEST</option>
-                  <option value="Ebolowa_Sud">SUD</option>
-                  <option value="Buea_SudOuest">SUD-OUEST</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide"><Navigation size={16} /> Ville</label>
-                <input type="text" name='ville' value={formData.ville} onChange={handleInputChange} placeholder="Ex: Yaoundé..." className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide"><MapPin size={16} /> Quartier</label>
-                <input type="text" name='quartier' value={formData.quartier} onChange={handleInputChange} placeholder="Ex: Bastos..." className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
-              </div>
-            </div>
-
-            {/* Cadre Cartographie */}
+             {/* Cadre Cartographie */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Localisation précise (Cliquez sur la carte)</h3>
@@ -479,6 +510,42 @@ const PublicationAnnonce = () => {
                 )}
               </div>
             </div>
+
+            {/*Champ remplir automatique apres un clique sur la carte*/}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide">
+                  <Navigation size={16} /> Région {geoLoading && <Loader2 size={12} className="animate-spin text-[#007b83] inline ml-1" />}
+                </label>
+                <select name='region' value={formData.region} onChange={handleInputChange} className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] cursor-pointer transition-all" required>
+                  <option value="" disabled>-- Choisir une option --</option>
+                  <option value="Adamaoua_ExtremeNord">ADAMAOUA</option>
+                  <option value="YAOUNDE_Centre">CENTRE</option>
+                  <option value="Bertoua_Est">EST</option>
+                  <option value="Maroua_Ngaoundere">EXTRÊME-NORD</option>
+                  <option value="Douala_Littoral">LITTORAL</option>
+                  <option value="Garoua_Nord">NORD</option>
+                  <option value="Bamenda_NordOuest">NORD-OUEST</option>
+                  <option value="Bafoussam_Ouest">OUEST</option>
+                  <option value="Ebolowa_Sud">SUD</option>
+                  <option value="Buea_SudOuest">SUD-OUEST</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide">
+                  <Navigation size={16} /> Ville {geoLoading && <Loader2 size={12} className="animate-spin text-[#007b83] inline ml-1" />}
+                </label>
+                <input type="text" name='ville' value={formData.ville} onChange={handleInputChange} placeholder="Remplissage automatique ou manuel..." className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-all" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide">
+                  <MapPin size={16} /> Quartier {geoLoading && <Loader2 size={12} className="animate-spin text-[#007b83] inline ml-1" />}
+                </label>
+                <input type="text" name='quartier' value={formData.quartier} onChange={handleInputChange} placeholder="Remplissage automatique ou manuel..." className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-all" />
+              </div>
+            </div>
+
+           
           </div>
         )}
 
@@ -488,14 +555,13 @@ const PublicationAnnonce = () => {
             <button type="button" disabled={loading} onClick={() => setStep(step - 1)} className="px-6 py-3 text-gray-600 font-semibold flex items-center gap-2"><ChevronLeft size={20} /> Précédent</button>
           ) : <div />}
           
-          {/* ✅ CONDITION STRICTE : Si on est au step 3, le bouton dépend de isFormInvalid() */}
           <button
             disabled={loading || (step === 3 && isFormInvalid())}
             onClick={() => { if (step < 3) { setStep(step + 1); } else { handleProcessToPayment(); } }}
             className="px-8 py-3 bg-[#007b83] text-white rounded-lg font-bold flex items-center gap-2 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-150 shadow-md"
           >
             {step === 3 ? (
-              loading ? <><Loader2 size={20} className="animate-spin" /> CHARGEMENT...</> : <><Check size={20} /> PASSER AU PAIEMENT</>
+              <><Check size={20} /> PASSER AU PAIEMENT</>
             ) : (
               <><>Suivant</><ChevronRight size={20} /></>
             )}
