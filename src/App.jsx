@@ -191,7 +191,7 @@ function App() {
           <Route 
             path='/mes-publications' 
             element={
-              <ProtectedRoute allowedRoles={['proprietaire','pending_proprietaire', 'prending_agence', 'agence']}>
+              <ProtectedRoute allowedRoles={['proprietaire','pending_proprietaire', 'pending_agence', 'agence']}>
                 <MyPublications />
               </ProtectedRoute>
             } 

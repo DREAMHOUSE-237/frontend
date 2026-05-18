@@ -132,7 +132,7 @@ const ProfilePage = () => {
 
     if (loading) return <div className="flex justify-center items-center h-screen italic text-gray-400">Chargement de votre espace...</div>;
 
-    // Formatage propre du rôle pour l'affichage 
+    // Formatage propre du rôle pour l'affichage (ex: PENDING_PROPRIETAIRE devient PROPRIÉTAIRE)
     const formatDisplayRole = (role) => {
         if (!role) return 'Utilisateur';
         const r = role.toUpperCase();
