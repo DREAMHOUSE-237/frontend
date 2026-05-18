@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "/api";
 
 // connexion service Aut
 
@@ -105,15 +105,19 @@ export const createAnnoce = async (data, images, position, adresse, documents) =
 
 };
 
-export const Mes_Publications = async () =>{
+export const Mes_Publications = async () => {
     try {
-        const response = await axios.get(`${API_URL}/PUBLICATION-SERVICE/api/biens/mes-publications`);
+        const token = localStorage.getItem('token');
+        
+        const response = await axios.get(`${API_URL}/PUBLICATION-SERVICE/api/biens/mes-publications`, {
+            headers: {
+                'Authorization': `Bearer ${token}` 
+            }
+        });
         return response.data;
-
     } catch(error){
-        console.error("Erreur lors de la recuperation des biens:", error);
-        throw error.response?.data || new Error("Impossible de charger vos publications")
-
+        console.error("Erreur lors de la récupération des biens:", error);
+        throw error.response?.data || new Error("Impossible de charger vos publications");
     }
 };
 
