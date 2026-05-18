@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom'; 
 import { User, LogOut, Menu, X, ChevronDown } from 'lucide-react';
-// ✅ IMPORT DU LOGO DEPUIS TES ASSETS
+// Import du logo depuis tes assets
 import logo from '../assets/logo.jpeg'; 
 
 const Navbar3 = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false); 
-  profileRef = useRef(null);
+  // ✅ FIX : Déclaration correcte avec const pour éviter l'erreur de référence strict mode
+  const profileRef = useRef(null);
 
   const [userName, setUserName] = useState("Utilisateur");
 
@@ -82,7 +83,6 @@ const Navbar3 = () => {
 
         {/* Logo & Titre - À gauche */}
         <NavLink to="/" className="flex items-center space-x-3 cursor-pointer group">
-          {/* ✅ Intégration de l'image de ton logo avec réduction fluide au scroll */}
           <div className={`overflow-hidden rounded-xl transition-all duration-300 ${scrolled ? 'w-9 h-9' : 'w-11 h-11'}`}>
             <img 
               src={logo} 
