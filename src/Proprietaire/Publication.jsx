@@ -456,7 +456,7 @@ const PublicationAnnonce = () => {
                   <option value="" disabled>-- Choisir une option --</option>
                   <option value="VENTE">VENTE</option>
                   <option value="LOCATION">LOCATION</option>
-                  <option value="BAIL">BAIL</option>
+                  {/* <option value="BAIL">BAIL</option> */}
                 </select>
               </div>
               <div className="space-y-2">

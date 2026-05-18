@@ -1,20 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { IdentityAdminService, AdminUserService } from '../service/auth_service';
 import { 
     Check, X, Eye, Clock, List, ShieldCheck, AlertCircle, 
-    Users, Fingerprint, LogOut, ShieldAlert, UserCheck, UserX 
+    Users, Fingerprint, LogOut, ShieldAlert, UserCheck, UserX,
+    QrCode, Download, Share2, ExternalLink
 } from 'lucide-react';
+// ✅ CORRECTION DE L'IMPORTATION : On utilise le vrai package officiel
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
+// Importation de ton logo depuis les assets
+import logoApp from '../assets/logo.jpeg'; 
 
 const AdminDashboard = () => {
-    const [activeSection, setActiveSection] = useState('identity'); // 'identity' ou 'users'
+    const [activeSection, setActiveSection] = useState('identity'); 
     const [requests, setRequests] = useState([]);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [view, setView] = useState('pending'); 
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    // Référence pointant directement sur le composant Canvas pour le téléchargement
+    const qrCanvasRef = useRef(null);
+    const urlProduction = "https://dreamhouse237.onrender.com/";
 
     useEffect(() => {
+        if (activeSection === 'qrcode') return;
         fetchData();
     }, [activeSection, view]);
 
@@ -26,9 +36,8 @@ const AdminDashboard = () => {
                     ? await IdentityAdminService.getPendingRequests() 
                     : await IdentityAdminService.getAllRequests();
                 setRequests(Array.isArray(data) ? data : []);
-            } else {
+            } else if (activeSection === 'users') {
                 const data = await AdminUserService.getUsers();
-                // On gère la pagination du backend (data.results)
                 setUsers(data.results || []);
             }
         } catch (err) {
@@ -36,6 +45,22 @@ const AdminDashboard = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    // FONCTION CORRIGÉE POUR LE TÉLÉCHARGEMENT DU CANVAS
+    const downloadQrCode = () => {
+        const canvas = qrCanvasRef.current;
+        if (!canvas) {
+            alert("Erreur lors de la capture de la matrice du QR Code");
+            return;
+        }
+        const url = canvas.toDataURL("image/png");
+        const link = document.createElement('a');
+        link.download = 'qrcode-dreamhouse.png';
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const handleIdentityReview = async (id, action) => {
@@ -52,12 +77,9 @@ const AdminDashboard = () => {
         }
 
         try {
-            // 1. On met à jour le service Identity
             await IdentityAdminService.reviewRequest(id, payload);
-            
-            // 2. IMPORTANT : On valide aussi dans le User-Service pour changer le rôle
             const userPayload = { 
-                user_id: selectedRequest.user_id || id, // Assure-toi d'envoyer l'ID utilisateur
+                user_id: selectedRequest.user_id || id, 
                 action, 
                 ...payload 
             };
@@ -80,9 +102,9 @@ const AdminDashboard = () => {
     };
 
     const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = '/'; 
-};
+        localStorage.clear();
+        window.location.href = '/'; 
+    };
 
     return (
         <div className="flex min-h-screen bg-gray-100 font-sans">
@@ -106,13 +128,20 @@ const AdminDashboard = () => {
                     >
                         <Users size={20} /> <span className="font-bold">Utilisateurs</span>
                     </button>
+
+                    <button 
+                        onClick={() => setActiveSection('qrcode')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeSection === 'qrcode' ? 'bg-blue-600 shadow-lg shadow-blue-900/50' : 'hover:bg-gray-800 text-gray-400'}`}
+                    >
+                        <QrCode size={20} /> <span className="font-bold">QR Code</span>
+                    </button>
                 </nav>
 
                 <div className="p-4 border-t border-gray-800">
                     <button 
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-xl transition font-bold">
-
+                        className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-xl transition font-bold"
+                    >
                         <LogOut size={20} /> Déconnexion
                     </button>
                 </div>
@@ -123,9 +152,13 @@ const AdminDashboard = () => {
                 <header className="mb-10 flex justify-between items-end">
                     <div>
                         <h1 className="text-4xl font-black text-gray-900 uppercase">
-                            {activeSection === 'identity' ? 'Vérification Identité' : 'Gestion Utilisateurs'}
+                            {activeSection === 'identity' && 'Vérification Identité'}
+                            {activeSection === 'users' && 'Gestion Utilisateurs'}
+                            {activeSection === 'qrcode' && 'Générateur de QR Code'}
                         </h1>
-                        <p className="text-gray-500 mt-2 font-medium">Panneau de contrôle des accès et de la sécurité</p>
+                        <p className="text-gray-500 mt-2 font-medium">
+                            {activeSection === 'qrcode' ? 'Générez et téléchargez le QR Code officiel de production' : 'Panneau de contrôle des accès et de la sécurité'}
+                        </p>
                     </div>
 
                     {activeSection === 'identity' && (
@@ -136,7 +169,7 @@ const AdminDashboard = () => {
                     )}
                 </header>
 
-                {loading ? (
+                {loading && activeSection !== 'qrcode' ? (
                     <div className="flex justify-center py-20 text-gray-400 font-bold animate-pulse">CHARGEMENT DES DONNÉES...</div>
                 ) : (
                     <div className="space-y-4">
@@ -196,6 +229,58 @@ const AdminDashboard = () => {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+                        )}
+
+                        {/* COMPOSANT QR CODE CORRIGÉ ET OPÉRATIONNEL */}
+                        {activeSection === 'qrcode' && (
+                            <div className="max-w-md bg-white rounded-[32px] border border-gray-100 shadow-sm p-8 text-center space-y-6 animate-in fade-in duration-300">
+                                <div className="space-y-1">
+                                    <h3 className="text-lg font-black text-gray-800">Lien de Production</h3>
+                                    <p className="text-xs text-gray-400">Scannez pour rediriger vos clients vers l'application Cloud</p>
+                                </div>
+
+                                <div className="flex justify-center py-2 bg-gray-50 rounded-2xl border border-gray-50">
+                                    <div className="bg-white p-4 rounded-2xl border shadow-sm">
+                                        {/* On utilise la syntaxe officielle de qrcode.react */}
+                                        <QRCodeCanvas
+                                            ref={qrCanvasRef}
+                                            value={urlProduction}
+                                            size={200}
+                                            bgColor={"#ffffff"}
+                                            fgColor={"#111827"}
+                                            level={"H"} 
+                                            imageSettings={{
+                                                src: logoApp,
+                                                height: 40,
+                                                width: 40,
+                                                excavate: true 
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border rounded-xl text-xs">
+                                    <span className="font-mono text-gray-500 truncate max-w-[260px] font-bold">{urlProduction}</span>
+                                    <a href={urlProduction} target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-700">
+                                        <ExternalLink size={14} />
+                                    </a>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button 
+                                        onClick={downloadQrCode}
+                                        className="py-3.5 bg-gray-900 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-blue-600 transition"
+                                    >
+                                        <Download size={14} /> PNG
+                                    </button>
+                                    <button 
+                                        onClick={() => { navigator.clipboard.writeText(urlProduction); alert("Lien copié !"); }}
+                                        className="py-3.5 bg-gray-100 text-gray-600 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-gray-200 transition"
+                                    >
+                                        <Share2 size={14} /> COPIER
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
