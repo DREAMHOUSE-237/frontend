@@ -16,12 +16,15 @@ const PublicationAnnonce = () => {
   const [mapPosition, setMapPosition] = useState([3.848, 11.502]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [geoLoading, setGeoLoading] = useState(false); // Indicateur de chargement pour le reverse geocoding
+  const [geoLoading, setGeoLoading] = useState(false);
 
-  // ÉTATS POUR LA PASSERELLE DE PAIEMENT
+  // ÉTATS DE LA PASSERELLE DE PAIEMENT
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentNumber, setPaymentNumber] = useState('');
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes en secondes
+  const [timeLeft, setTimeLeft] = useState(120); // ✅ Fixation du temps alloué à 2 minutes (120s)
+  const [paymentStatus, setPaymentStatus] = useState('idle'); // 'idle' | 'processing' | 'success' | 'error'
+  const [apiError, setApiError] = useState('');
+  const [redirectCount, setRedirectCount] = useState(3); // Décompte avant redirection après succès
 
   const steps = [
     { id: 1, label: 'Description', icon: <Layout size={20} /> },
@@ -43,7 +46,7 @@ const PublicationAnnonce = () => {
     quartier: ''
   });
 
-  // DICTIONNAIRE DE CORRESPONDANCE POUR LES RÉGIONS DU CAMEROUN
+  // DICTIONNAIRE DE CORRESPONDANCE POUR LES RÉGIONS
   const normaliserRegion = (inputRegion) => {
     if (!inputRegion) return '';
     const cleanStr = inputRegion.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -64,7 +67,7 @@ const PublicationAnnonce = () => {
     return '';
   };
 
-  // ✅ HOOK D'ÉCOUTE ET DE REMPLISSAGE AUTOMATIQUE AU CLIC DE LA CARTE
+  // REVERSE GEOCODING AUTOMATIQUE
   useEffect(() => {
     if (!position) return;
 
@@ -78,8 +81,6 @@ const PublicationAnnonce = () => {
 
         if (data && data.address) {
           const addr = data.address;
-
-          // Extraction intelligente selon les priorités Nominatim OpenStreetMap
           const villeDetectee = addr.city || addr.town || addr.village || addr.county || '';
           const quartierDetecte = addr.suburb || addr.neighbourhood || addr.quarter || addr.residential || addr.road || '';
           const regionDetectee = normaliserRegion(addr.state || addr.region);
@@ -88,7 +89,7 @@ const PublicationAnnonce = () => {
             ...prev,
             ville: villeDetectee,
             quartier: quartierDetecte,
-            region: regionDetectee || prev.region // Conserve l'ancienne si non reconnue
+            region: regionDetectee || prev.region
           }));
         }
       } catch (error) {
@@ -101,7 +102,7 @@ const PublicationAnnonce = () => {
     reverseGeocode();
   }, [position]);
 
-  // Vérifie si au moins un champ obligatoire ou structurel est vide
+  // VALIDATION STRICTE DES CHAMPS
   const isFormInvalid = () => {
     return (
       !formData.titreBien.trim() ||
@@ -121,11 +122,11 @@ const PublicationAnnonce = () => {
     );
   };
 
-  // LOGIQUE DU COMPTE À REBOURS DE 5 MINUTES
+  // LOGIQUE DU MINUTEUR DE 2 MINUTES
   useEffect(() => {
-    if (!showPaymentModal) return;
+    if (!showPaymentModal || paymentStatus !== 'idle') return;
     if (timeLeft === 0) {
-      alert("Le délai de paiement de 5 minutes est expiré. Veuillez réessayer.");
+      alert("Le délai de paiement de 2 minutes est expiré. Veuillez réessayer.");
       setShowPaymentModal(false);
       return;
     }
@@ -135,7 +136,23 @@ const PublicationAnnonce = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [showPaymentModal, timeLeft]);
+  }, [showPaymentModal, timeLeft, paymentStatus]);
+
+  // COMPTE À REBOURS VISUEL AVANT REDIRECTION APRÈS SUCCÈS
+  useEffect(() => {
+    if (paymentStatus !== 'success') return;
+    if (redirectCount === 0) {
+      setShowPaymentModal(false);
+      window.location.href = '/mes-publications';
+      return;
+    }
+
+    const redirectTimer = setTimeout(() => {
+      setRedirectCount(prev => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(redirectTimer);
+  }, [paymentStatus, redirectCount]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -143,10 +160,8 @@ const PublicationAnnonce = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // SIMULATION DES DESIGN PATTERNS STRATEGIE DU BACKEND
   const calculerFraisPublication = () => {
     const prixBase = parseFloat(formData.prix) || 0;
-    
     if (formData.typePublication === 'VENTE') {
       return prixBase * 0.05;
     } else if (formData.typePublication === 'LOCATION' || formData.typePublication === 'BAIL') {
@@ -202,13 +217,17 @@ const PublicationAnnonce = () => {
 
   const handleProcessToPayment = () => {
     if (isFormInvalid()) {
-      alert("Veuillez remplir correctement l'intégralité du formulaire et placer le marqueur avant de continuer.");
+      alert("Veuillez remplir correctement l'intégralité du formulaire.");
       return;
     }
-    setTimeLeft(300);
+    setTimeLeft(120); // Réinitialisation à 120s
+    setPaymentStatus('idle');
+    setApiError('');
+    setRedirectCount(3);
     setShowPaymentModal(true);
   };
 
+  // SOUMISSION DU PAIEMENT ET TRANSFERT MULTIPART
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
 
@@ -218,8 +237,10 @@ const PublicationAnnonce = () => {
     }
 
     try {
+      // ✅ ÉTAT 1 : En cours de traitement (Popup maintenue ouverte)
       setLoading(true);
-      setShowPaymentModal(false); 
+      setPaymentStatus('processing');
+      setApiError('');
 
       const adresse = {
         region: formData.region,
@@ -243,9 +264,10 @@ const PublicationAnnonce = () => {
         rawDocuments
       );
 
-      alert("Paiement validé et annonce publiée avec succès !");
+      // ✅ ÉTAT 2 : Succès (Popup reste ouverte, affichage du message de confirmation)
+      setPaymentStatus('success');
 
-      // RESET INTEGRAL DES CHAMPS AVANT REDIRECTION
+      // Nettoyage complet de la mémoire
       images.forEach(img => URL.revokeObjectURL(img.preview));
       documents.forEach(doc => URL.revokeObjectURL(doc.preview));
       
@@ -267,12 +289,11 @@ const PublicationAnnonce = () => {
         quartier: ''
       });
 
-      window.location.href = '/mes-publications';
-
     } catch (err) {
-      console.error("ERREUR TRANSFERT SERVEUR :", err);
-      alert(err?.data?.message || "La transaction a échoué. Veuillez vérifier votre solde MoMo / Orange Money.");
-    } finally {
+      // ÉTAT 3 : Erreur de l'API (Popup reste ouverte, affichage de l'erreur)
+      console.error("ERREUR :", err);
+      setPaymentStatus('error');
+      setApiError(err?.data?.message || err?.message || "La transaction a échoué. Veuillez vérifier votre réseau.");
       setLoading(false);
     }
   };
@@ -280,76 +301,123 @@ const PublicationAnnonce = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col w-full font-sans text-gray-900 relative">
       
-      {/* POPUP DE PAIEMENT */}
+      {/* 💳 POPUP DE PAIEMENT INTELLIGENTE ET COHÉRENTE */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-[300000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 border border-gray-100 relative animate-in zoom-in-95 duration-200">
             
+            {/* La croix de fermeture se désactive si une tâche réseau est en cours ou réussie */}
             <button 
               onClick={() => setShowPaymentModal(false)}
-              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 transition-colors"
+              disabled={paymentStatus === 'processing' || paymentStatus === 'success'}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-0"
             >
               <X size={20} />
             </button>
 
             <div className="text-center space-y-2 mb-6">
-              <div className="w-12 h-12 bg-[#007b83]/10 text-[#007b83] rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto shadow-inner transition-colors ${
+                paymentStatus === 'success' ? 'bg-green-100 text-green-600' :
+                paymentStatus === 'error' ? 'bg-red-100 text-red-600' : 'bg-[#007b83]/10 text-[#007b83]'
+              }`}>
                 <CreditCard size={24} />
               </div>
-              <h2 className="text-xl font-black text-gray-900 tracking-tight">Frais de Publication</h2>
-              <p className="text-xs text-gray-400 font-medium">Finissez votre annonce en effectuant le dépôt d'activation, vous allez recevoir un message de paiement</p>
+              <h2 className="text-xl font-black text-gray-900 tracking-tight">
+                {paymentStatus === 'success' ? "Bien Publié !" : "Frais de Publication"}
+              </h2>
+              <p className="text-xs text-gray-400 font-medium px-4">
+                {paymentStatus === 'success' ? "Votre paiement a été validé et votre annonce est disponible sur le cloud." : 
+                 "Finissez votre annonce en effectuant le dépôt d'activation, vous allez recevoir un message de paiement."}
+              </p>
             </div>
 
-            {/* Ticket */}
-            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3 mb-6">
-              <div className="flex justify-between text-xs font-semibold text-gray-500">
-                <span>Type d'opération</span>
-                <span className="uppercase tracking-wider text-gray-700 bg-white px-2 py-0.5 rounded-md border border-gray-100">{formData.typePublication}</span>
+            {/* Ticket de Facturation */}
+            {paymentStatus !== 'success' && (
+              <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3 mb-6">
+                <div className="flex justify-between text-xs font-semibold text-gray-500">
+                  <span>Type d'opération</span>
+                  <span className="uppercase tracking-wider text-gray-700 bg-white px-2 py-0.5 rounded-md border border-gray-100">{formData.typePublication}</span>
+                </div>
+                <div className="flex justify-between text-xs font-semibold text-gray-500">
+                  <span>Montant du bien</span>
+                  <span className="text-gray-700">{parseFloat(formData.prix).toLocaleString()} FCFA</span>
+                </div>
+                <div className="h-[1px] bg-gray-200/60 my-1" />
+                <div className="flex justify-between items-baseline">
+                  <span className="text-xs font-bold text-gray-900">Frais à payer ({formData.typePublication === 'VENTE' ? 'Commission 5%' : 'Frais fixes'})</span>
+                  <span className="text-xl font-black text-[#007b83]">{calculerFraisPublication().toLocaleString()} <small className="text-[10px] font-bold">FCFA</small></span>
+                </div>
               </div>
-              <div className="flex justify-between text-xs font-semibold text-gray-500">
-                <span>Montant du bien</span>
-                <span className="text-gray-700">{parseFloat(formData.prix).toLocaleString()} FCFA</span>
-              </div>
-              <div className="h-[1px] bg-gray-200/60 my-1" />
-              <div className="flex justify-between items-baseline">
-                <span className="text-xs font-bold text-gray-900">Frais à payer ({formData.typePublication === 'VENTE' ? 'Commission 5%' : 'Frais fixes'})</span>
-                <span className="text-xl font-black text-[#007b83]">{calculerFraisPublication().toLocaleString()} <small className="text-[10px] font-bold">FCFA</small></span>
-              </div>
-            </div>
+            )}
 
-            {/* Minuteur */}
-            <div className="text-center mb-6">
-              <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Temps alloué pour le paiement</span>
-              <div className={`text-2xl font-mono font-black mt-1 ${timeLeft <= 60 ? 'text-red-500 animate-pulse' : 'text-gray-700'}`}>
-                {formatTime(timeLeft)}
-              </div>
+            {/* ÉTAT DU MINUTEUR / STATUTS API DANS LA POPUP */}
+            <div className="text-center mb-6 py-2">
+              {paymentStatus === 'idle' && (
+                <>
+                  <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Temps alloué pour le paiement</span>
+                  <div className={`text-2xl font-mono font-black mt-1 ${timeLeft <= 30 ? 'text-red-500 animate-pulse' : 'text-gray-700'}`}>
+                    {formatTime(timeLeft)}
+                  </div>
+                </>
+              )}
+
+              {paymentStatus === 'processing' && (
+                <div className="text-sm font-bold text-[#007b83] flex flex-col items-center justify-center gap-3 animate-pulse">
+                  <Loader2 className="animate-spin text-[#007b83]" size={32} />
+                  <span className="italic uppercase tracking-wider text-xs">Publication en cours.....</span>
+                </div>
+              )}
+
+              {paymentStatus === 'success' && (
+                <div className="text-sm font-bold text-green-600 bg-green-50 p-4 rounded-2xl border border-green-100 flex flex-col items-center gap-2">
+                  <span className="uppercase tracking-widest text-xs font-black">Félicitations !</span>
+                  <p className="font-normal text-xs text-green-700">Redirection automatique vers vos propriétés dans {redirectCount}s...</p>
+                </div>
+              )}
+
+              {paymentStatus === 'error' && (
+                <div className="text-left text-xs font-semibold text-red-600 bg-red-50 p-4 rounded-2xl border border-red-100 space-y-1">
+                  <div className="flex items-center gap-1.5 font-black uppercase tracking-wider text-[10px]">
+                    <AlertCircle size={14} /> Échec de la publication
+                  </div>
+                  <p className="italic font-medium">{apiError}</p>
+                </div>
+              )}
             </div>
 
             {/* Formulaire Mobile Money / Orange Money */}
-            <form onSubmit={handleFinalSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Numéro de débit (MoMo / Orange Money)</label>
-                <div className="relative flex items-center">
-                  <span className="absolute left-4 text-gray-500 font-bold text-sm">+237</span>
-                  <Smartphone className="absolute left-16 w-4 h-4 text-gray-400" />
-                  <input 
-                    type='number' 
-                    required
-                    value={paymentNumber}
-                    onChange={(e) => { if (e.target.value.length <= 9) setPaymentNumber(e.target.value); }}
-                    className="w-full pl-24 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 text-sm font-bold tracking-wider transition-all" 
-                    placeholder="6XXXXXXXX" 
-                  />
+            {paymentStatus !== 'success' && (
+              <form onSubmit={handleFinalSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Numéro de débit (MoMo / Orange Money)</label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-4 text-gray-500 font-bold text-sm">+237</span>
+                    <Smartphone className="absolute left-16 w-4 h-4 text-gray-400" />
+                    <input 
+                      type='number' 
+                      required
+                      disabled={paymentStatus === 'processing'}
+                      value={paymentNumber}
+                      onChange={(e) => { if (e.target.value.length <= 9) setPaymentNumber(e.target.value); }}
+                      className="w-full pl-24 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 text-sm font-bold tracking-wider transition-all disabled:opacity-40" 
+                      placeholder="6XXXXXXXX" 
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                className="w-full bg-[#1a2b3c] text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#007b83] transition-all shadow-lg flex items-center justify-center gap-2"
-              >
-                <Check size={16} /> Confirmer et Payer
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={paymentStatus === 'processing'}
+                  className="w-full bg-[#1a2b3c] text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#007b83] transition-all shadow-lg flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  {paymentStatus === 'processing' ? (
+                    <><Loader2 className="animate-spin" size={16} /> EN COURS...</>
+                  ) : (
+                    <><Check size={16} /> {paymentStatus === 'error' ? "Réessayer le paiement" : "Confirmer et Payer"}</>
+                  )}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}
@@ -456,7 +524,7 @@ const PublicationAnnonce = () => {
                   <option value="" disabled>-- Choisir une option --</option>
                   <option value="VENTE">VENTE</option>
                   <option value="LOCATION">LOCATION</option>
-                  {/* <option value="BAIL">BAIL</option> */}
+                  <option value="BAIL">BAIL</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -488,7 +556,7 @@ const PublicationAnnonce = () => {
 
         {step === 3 && (
           <div className="space-y-8 animate-in fade-in duration-500">
-             {/* Cadre Cartographie */}
+            {/* Cadre Cartographie */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-black uppercase tracking-widest text-gray-400">Localisation précise (Cliquez sur la carte)</h3>
@@ -511,7 +579,7 @@ const PublicationAnnonce = () => {
               </div>
             </div>
 
-            {/*Champ remplir automatique apres un clique sur la carte*/}
+            {/*Champs géocodés*/}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-600 flex items-center gap-2 uppercase tracking-wide">
@@ -544,8 +612,6 @@ const PublicationAnnonce = () => {
                 <input type="text" name='quartier' value={formData.quartier} onChange={handleInputChange} placeholder="Remplissage automatique ou manuel..." className="w-full p-4 bg-white border border-gray-200 rounded-lg outline-none focus:border-[#007b83] transition-all" />
               </div>
             </div>
-
-           
           </div>
         )}
 
