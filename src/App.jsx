@@ -175,7 +175,7 @@ function App() {
           <Route 
             path='/accueil2' 
             element={
-              <ProtectedRoute allowedRoles={['proprietaire','pending_proprietaire', 'pending_agent', 'agence']}>
+              <ProtectedRoute allowedRoles={['proprietaire','pending_proprietaire', 'pending_agence', 'agence']}>
                 <ProprietaireHome />
               </ProtectedRoute>
             } 
