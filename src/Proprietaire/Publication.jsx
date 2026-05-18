@@ -239,7 +239,7 @@ const PublicationAnnonce = () => {
                 <CreditCard size={24} />
               </div>
               <h2 className="text-xl font-black text-gray-900 tracking-tight">Frais de Publication</h2>
-              <p className="text-xs text-gray-400 font-medium">Finissez votre annonce en effectuant le dépôt d'activation</p>
+              <p className="text-xs text-gray-400 font-medium">Finissez votre annonce en effectuant le dépôt d'activation, vous allez rececvoir un message de paiement</p>
             </div>
 
             {/* Ticket */}
