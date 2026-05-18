@@ -75,7 +75,7 @@ const MyPublications = () => {
               key={pub.id}
               className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col sm:flex-row group hover:shadow-md transition-shadow"
             >
-              {/* ✅ FIX CLOUDINARY SECURE : Lecture de la première image via BienService.formatImageUrl */}
+              {/*  Lecture de la première image via BienService.formatImageUrl */}
               <div className="relative w-full sm:w-48 h-48 sm:h-auto overflow-hidden bg-gray-100 flex items-center justify-center">
                 <img
                   src={pub.images && pub.images.length > 0 && pub.images[0] ? BienService.formatImageUrl(pub.images[0]) : "https://via.placeholder.com/400x320?text=Aucune+image"}

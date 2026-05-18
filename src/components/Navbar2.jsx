@@ -24,7 +24,7 @@ const Navbar2 = () => {
       }
     }
 
-    // Secours : Décoder le token si l'objet user est absent
+    // Décoder le token 
     if (token) {
       try {
         const base64Url = token.split('.')[1];
@@ -49,7 +49,6 @@ const Navbar2 = () => {
     window.location.href = '/connexion'; 
   };
 
-  // Détecter le scroll pour l'effet visuel
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);

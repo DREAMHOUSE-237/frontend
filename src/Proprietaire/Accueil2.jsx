@@ -23,11 +23,11 @@ const ProprietaireHome = () => {
     const user = JSON.parse(userData);
     if (user.email) {
       setUserName(user.email.split('@')[0]);
-      return; // On s'arrête ici si on a trouvé
+      return; 
     }
   }
 
-  // Secours : Décoder le token si l'objet user est absent
+  // Décoder le token si l'objet user est absent
   if (token) {
     try {
       const base64Url = token.split('.')[1];
@@ -45,26 +45,23 @@ const ProprietaireHome = () => {
   const user = {
     prenom: userName,
   };
-  
-  // Utilisation de l'image de partenariat pour le fond
+
   const partnerBg = "https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=1920&auto=format&fit=crop";
 
   return (
     <div className="min-h-screen bg-[#f8f6f2] pb-20 font-sans">
       
-      {/* 1. SECTION BIENVENUE (HERO) - FULL WIDTH AVEC IMAGE BACKGROUND */}
+      {/* 1. SECTION BIENVENUE */}
       <div className="w-full relative">
         <div 
           className="relative py-20 md:py-32 px-6 text-white overflow-hidden shadow-2xl bg-cover bg-center bg-no-repeat"
           style={{ 
             backgroundImage: `url(${partnerBg})`,
-            backgroundAttachment: 'fixed' // Effet parallaxe sur desktop
+            backgroundAttachment: 'fixed'
           }}
         >
-          {/* Overlay sombre pour la lisibilité (fond de partenariat) */}
           <div className="absolute inset-0 bg-[#1a2b3c]/85 backdrop-blur-[2px]"></div>
 
-          {/* Décorations abstraites en fond */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#007b83] opacity-20 rounded-full -mr-32 -mt-32 blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#f97316] opacity-10 rounded-full -ml-20 -mb-20 blur-3xl"></div>
           
@@ -126,7 +123,7 @@ const ProprietaireHome = () => {
             </div>
             <h3 className="text-xl font-black text-[#1a2b3c] mb-3">Transparence tarifaire</h3>
             <p className="text-gray-500 leading-relaxed">
-              Frais de service fixes : payez seulement 5% du prix du loyer lors de la publication de votre annonce.
+              Frais de service fixes : payez seulement 5% du prix du loyer pour le type de publication si VENTRE et 10000Fcfa si LOCATION ou BAIL lors de la publication de votre annonce.
             </p>
           </div>
 

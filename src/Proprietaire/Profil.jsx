@@ -9,8 +9,6 @@ import { IdentityService } from '../service/auth_service';
 
 const ProfilePage = () => {
     const fileInputRef = useRef(null);
-
-    // États techniques
     const [loading, setLoading] = useState(true);
     const [submitLoading, setSubmitLoading] = useState(false);
     
@@ -50,7 +48,7 @@ const ProfilePage = () => {
             const userData = await getUserProfile();
             const nameParts = userData.username ? userData.username.split(' ') : ['', ''];
             
-            // On extrait le rôle renvoyé par l'API (plus fiable que le localStorage)
+            // On extrait le rôle renvoyé par l'API 
             const currentRole = userData.role || localStorage.getItem('role') || 'Utilisateur';
 
             let idStatus = null;
@@ -60,11 +58,10 @@ const ProfilePage = () => {
             if (['proprietaire', 'agence', 'agent', 'pending_proprietaire', 'pending_agence'].some(r => currentRole.toLowerCase().includes(r))) {
                 try {
                     const statusResponse = await IdentityService.checkMyStatus(userData.email);
-                    idStatus = statusResponse.status; // 'verified', 'pending', 'rejected'
+                    idStatus = statusResponse.status; 
                     rejectMsg = statusResponse.rejection_reason || '';
                     
-                    // Sécurité : Si l'identité est validée côté Identity-Service, on met à jour localement 
-                    // pour forcer l'affichage vert même si le rôle USER-SERVICE met du temps à se propager
+                    //  Si l'identité est validée côté Identity-Service, on met à jour localement 
                     if (statusResponse.status === 'verified') {
                         userData.is_active = true; 
                     }
@@ -135,7 +132,7 @@ const ProfilePage = () => {
 
     if (loading) return <div className="flex justify-center items-center h-screen italic text-gray-400">Chargement de votre espace...</div>;
 
-    // Formatage propre du rôle pour l'affichage (ex: PENDING_PROPRIETAIRE devient PROPRIÉTAIRE)
+    // Formatage propre du rôle pour l'affichage 
     const formatDisplayRole = (role) => {
         if (!role) return 'Utilisateur';
         const r = role.toUpperCase();

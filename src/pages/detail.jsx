@@ -99,7 +99,7 @@ const Details = () => {
     if (!userQuery.trim()) return;
 
     setRouteLoading(true);
-    setIsTracking(false); // Coupe le tracking GPS en direct pour privilégier l'itinéraire manuel
+    setIsTracking(false); 
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(userQuery)}`
@@ -111,7 +111,7 @@ const Details = () => {
           lat: parseFloat(data[0].lat),
           lng: parseFloat(data[0].lon)
         });
-        setIsMapMaximized(true); // Maximise pour voir confortablement le grand tracé de route
+        setIsMapMaximized(true); 
       } else {
         alert("Lieu introuvable. Soyez plus précis (ex: Simbock, Yaoundé).");
       }
@@ -125,7 +125,7 @@ const Details = () => {
 
   const toggleGpsTracking = () => {
     if (!isTracking) {
-      setUserQuery(""); // Nettoie la recherche textuelle
+      setUserQuery(""); 
       setIsTracking(true);
       setIsMapMaximized(true);
     } else {
@@ -220,7 +220,7 @@ const Details = () => {
   const images = bien.images && bien.images.length > 0 ? bien.images : [];
   const docs = bien.docuements || bien.documents || [];
 
-  // ✅ FIX STRUCTURE WHATSAPP : Extraction propre de maximum deux images du catalogue Cloudinary
+  //  Extraction propre de maximum deux images du catalogue Cloudinary
   const firstImageUrl = images[0] ? BienService.formatImageUrl(images[0]) : '';
   const secondImageUrl = images[1] ? BienService.formatImageUrl(images[1]) : '';
 

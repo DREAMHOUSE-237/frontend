@@ -8,8 +8,6 @@ const Accueil = () => {
   const navigate = useNavigate();
   const [annonces, setAnnonces] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // --- LOGIQUE DE L'ANIMATION TYPING ---
   const [index, setIndex] = useState(0);
   const words = ["ressemble enfin.", "donne le sourire.", "appartient déjà."]; 
   const [subIndex, setSubIndex] = useState(0);
@@ -93,7 +91,7 @@ const Accueil = () => {
                 onClick={() => navigate(`/detail/${annonce.id}`)}
                 className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group border border-gray-100 overflow-hidden flex flex-col"
               >
-                {/* Image principale : Récupération directe du premier index du tableau Cloudinary */}
+                {/*  Récupération directe du premier index du tableau Cloudinary */}
                 <div className="relative h-48 overflow-hidden bg-gray-100 flex items-center justify-center">
                   <img 
                     src={annonce.images && annonce.images.length > 0 && annonce.images[0] ? annonce.images[0] : "https://via.placeholder.com/400x320?text=Aucune+image"} 

@@ -28,9 +28,7 @@ import AdminDashboard from './admin/Admin';
 
 import './App.css';
 
-// ==========================================================
 // 1. PROTECTION DES ROUTES PAR RÔLE & ÉLIGIBILITÉ
-// ==========================================================
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const token = localStorage.getItem('token');
   
@@ -45,8 +43,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
       return <Navigate to="/admin" replace />;
     }
 
-    // AJOUT GESTION CLIENT : Si un client tente d'accéder à une route propriétaire ou admin,
-    // on le redirige directement vers l'accueil public au lieu de lui afficher une erreur.
+    //  Si un client tente d'accéder à une route propriétaire ou admin,on le redirige directement vers l'accueil public au lieu de lui afficher une erreur.
     if (userRole === 'client' && allowedRoles.length > 0 && !allowedRoles.includes('client')) {
       return <Navigate to="/" replace />;
     }
@@ -79,9 +76,8 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   return children;
 };
 
-// ==========================================================
+
 // 2. LAYOUT WRAPPER (NAVBAR & REDIRECTIONS ETANCHES)
-// ==========================================================
 const LayoutWrapper = ({ children, setIsAuthenticated }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -106,7 +102,7 @@ const LayoutWrapper = ({ children, setIsAuthenticated }) => {
       navigate('/admin', { replace: true });
     }
 
-    // AJOUT SÉCURITÉ CLIENT : Si un client tente manuellement d'entrer sur les URLs privées
+    //  Si un client tente manuellement d'entrer sur les URLs privées
     const routesPriveesMoinsClient = ['/accueil2', '/publication', '/mes-publications', '/admin'];
     if (role === 'client' && routesPriveesMoinsClient.some(route => location.pathname.startsWith(route))) {
       navigate('/', { replace: true });
@@ -121,7 +117,7 @@ const LayoutWrapper = ({ children, setIsAuthenticated }) => {
 
   const renderNavbar = () => {
     if (!token) return <Navbar />;
-    // ✅ Le client a STRICTEMENT la Navbar3, les autres rôles (proprio, agence) ont la Navbar2
+    // Le client a strictement la Navbar3, les autres rôles (proprietaire, agence) ont la Navbar2
     return role === 'client' 
       ? <Navbar3 onLogout={handleLogout} /> 
       : <Navbar2 onLogout={handleLogout} />;
@@ -138,9 +134,7 @@ const LayoutWrapper = ({ children, setIsAuthenticated }) => {
   );
 };
 
-// ==========================================================
 // 3. COMPOSANT PRINCIPAL APP
-// ==========================================================
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
 

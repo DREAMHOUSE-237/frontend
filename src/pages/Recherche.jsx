@@ -12,7 +12,6 @@ const RecherchePage = () => {
   const [annonces, setAnnonces] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Définition de l'état initial pour faciliter le reset
   const initialFilters = {
     type: '',
     categorie: '',
@@ -35,16 +34,14 @@ const RecherchePage = () => {
       setLoading(true);
       const data = await BienService.getAll();
 
-      // On vérifie que data existe et est un tableau avant de mettre à jour
       if (data) {
         setAnnonces(data);
       } else {
         setAnnonces([]);
       }
     } catch (error) {
-      // On attrape l'erreur ici pour éviter le crash "Uncaught"
       console.error("Erreur lors de la récupération des données :", error);
-      setAnnonces([]); // On initialise à vide pour éviter les erreurs de .map()
+      setAnnonces([]); 
     } finally {
       setLoading(false);
     }
@@ -87,7 +84,7 @@ const RecherchePage = () => {
               <label className="text-xs font-black text-gray-400 uppercase ml-1">Type</label>
               <div className="relative">
                 <select
-                  value={filters.type} // Liaison
+                  value={filters.type} 
                   onChange={(e) => setFilters({ ...filters, type: e.target.value })}
                   className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl appearance-none outline-none text-sm cursor-pointer text-gray-700">
                   <option value="">Tous les types</option>
@@ -102,7 +99,7 @@ const RecherchePage = () => {
               <label className="text-xs font-black text-gray-400 uppercase ml-1">Catégorie</label>
               <div className="relative">
                 <select
-                  value={filters.categorie} // Liaison
+                  value={filters.categorie} 
                   onChange={(e) => setFilters({ ...filters, categorie: e.target.value })}
                   className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl appearance-none outline-none text-sm cursor-pointer text-gray-700">
                   <option value="">Toutes catégories</option>
@@ -120,7 +117,7 @@ const RecherchePage = () => {
                 <input
                   type="text"
                   placeholder="Yaoundé..."
-                  value={filters.ville} // Liaison
+                  value={filters.ville} 
                   onChange={(e) => setFilters({ ...filters, ville: e.target.value })}
                   className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none text-sm pl-11 "
                 />
@@ -149,7 +146,7 @@ const RecherchePage = () => {
                 <label className="text-xs font-black text-gray-400 uppercase ml-1">Quartier</label>
                 <input
                   type="text"
-                  value={filters.quartier} // Liaison
+                  value={filters.quartier} 
                   placeholder="Ex: Bastos"
                   onChange={(e) => setFilters({ ...filters, quartier: e.target.value })}
                   className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm  outline-none"
@@ -160,7 +157,7 @@ const RecherchePage = () => {
                 <div className="relative">
                   <input
                     type="number"
-                    value={filters.prix} // Liaison
+                    value={filters.prix} 
                     placeholder="500000"
                     onChange={(e) => setFilters({ ...filters, prix: e.target.value })}
                     className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm  pl-11 outline-none"
@@ -173,7 +170,7 @@ const RecherchePage = () => {
                 <div className="relative">
                   <input
                     type="number"
-                    value={filters.pieces} // Liaison
+                    value={filters.pieces} 
                     placeholder="2"
                     onChange={(e) => setFilters({ ...filters, pieces: e.target.value })}
                     className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm  pl-11 outline-none"
@@ -254,7 +251,7 @@ const RecherchePage = () => {
           </div>
         )}
 
-        {/* Pagination (simplifiée) */}
+        {/* Pagination  */}
         {annonces.length > annoncesPerPage && (
           <div className="mt-16 flex justify-center items-center gap-3">
             {[...Array(totalPages)].map((_, i) => (

@@ -17,7 +17,6 @@ const Inscription = () => {
         tel: '',
         ville: '',
         region: '',
-        // Nouveaux champs spécifiques pour l'agent/agence immobilière
         nomAgence: '',
         quartier: '',
         numeroIdentification: '',
@@ -59,7 +58,6 @@ const Inscription = () => {
                 tel: formData.tel,
                 ville: formData.ville,
                 region: formData.region,
-                // Inclusion conditionnelle des attributs d'agence
                 ...(accountType === "agence" && {
                     nomAgence: formData.nomAgence,
                     quartier: formData.quartier,
@@ -78,7 +76,6 @@ const Inscription = () => {
                 identityData.append('password', formData.password);
                 identityData.append('requested_role', accountType);
                 
-                // On passe également les métadonnées d'identification si c'est une agence
                 if (accountType === "agence") {
                     identityData.append('nom_agence', formData.nomAgence);
                     identityData.append('numero_identification', formData.numeroIdentification);
@@ -96,7 +93,6 @@ const Inscription = () => {
             setSuccess(true); 
             setLoading(false); 
 
-            // Réinitialisation complète
             setFormData({
                 nom: '',
                 prenom: '',

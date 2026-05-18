@@ -140,7 +140,7 @@ const ModifierPublication = () => {
       }
       setSaveLoading(true);
 
-      // ✅ FIX SÉCURITÉ CLOUDINARY : On sépare les chaînes textuelles des nouveaux fichiers binaires
+      // On sépare les chaînes textuelles des nouveaux fichiers binaires
       const baseImagesUrls = formData.images.filter(img => img.isExisting).map(img => img.raw);
       const newImagesFiles = formData.images.filter(img => !img.isExisting).map(img => img.raw);
 
@@ -152,7 +152,7 @@ const ModifierPublication = () => {
         // On passe uniquement les fichiers binaires bruts au gestionnaire d'envoi MultipartFormData
         images: newImagesFiles, 
         documents: newDocsFiles,
-        // ✅ On transmet aussi les URLs existantes pour que le backend ne les supprime pas du catalogue SQL
+        // On transmet aussi les URLs existantes pour que le backend ne les supprime pas du catalogue SQL
         existingImages: baseImagesUrls,
         existingDocuments: baseDocsUrls
       };

@@ -3,8 +3,6 @@ import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import acc3 from '../assets/acc3.jpg';
 import logo from '../assets/logo.jpeg'; 
-
-// Importation des sous-composants
 import LoginForm from './Connexion2';
 import Inscription from './Inscription';
 
@@ -23,7 +21,6 @@ const AuthPage = () => {
                     {/* LOGO CENTRALISÉ */}
                     <div className="text-center mb-8">
                         <div className="flex flex-col justify-center items-center gap-3 mb-4 group">
-                            {/* ✅ Intégration de l'image de ton logo officiel */}
                             <div className="w-14 h-14 overflow-hidden rounded-xl shadow-sm border border-gray-100">
                                 <img 
                                   src={logo} 
@@ -36,8 +33,6 @@ const AuthPage = () => {
                                 <span className="text-[#007b83]">House</span>
                             </div>
                         </div>
-                        
-                        {/* Titres dynamiques */}
                         <h2 className="text-xl font-bold text-gray-800">
                             {authMode === 'login' ? "Bienvenue" : "Créer un compte"}
                         </h2>

@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import "leaflet-routing-machine";
 
-// ✅ CONFIGURATION DE L'ICÔNE VERTE POUR LE CLIENT (Style identique au bien)
+// icone verte pour la position du client
 const clientGreenIcon = L.icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -15,7 +15,7 @@ const clientGreenIcon = L.icon({
     shadowSize: [41, 41]
 });
 
-// Épingle Bleue par défaut pour le Bien Immobilier
+// icone bleue par défaut pour le Bien Immobilier
 let DefaultIcon = L.icon({
     iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -24,7 +24,7 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Moteur de calcul d'itinéraire (Anti-clignotement)
+// Moteur de calcul d'itinéraire 
 function RoutingEngine({ userCoords, bienCoords }) {
   const map = useMap();
   const routingControlRef = useRef(null);
@@ -100,7 +100,7 @@ function ResizeMap({ isExpanded }) {
   return null;
 }
 
-// ✅ GESTIONNAIRE DE CLIC INTERACTIF POUR LA PUBLICATION (Ajouté en sécurité)
+// clc pour publier un bien
 function LocationMarker({ position, setPosition }) {
   const [localPos, setLocalPos] = useState(position);
 
@@ -118,7 +118,7 @@ function LocationMarker({ position, setPosition }) {
   return localPos ? <Marker position={localPos} /> : null;
 }
 
-// Couche de tuiles Google Maps mémoïsée
+// Couche de tuiles Google Maps
 const StaticTileLayer = React.memo(() => {
   return (
     <TileLayer
@@ -158,7 +158,7 @@ export default function LocationPicker({ position, setPosition, mapPosition, isE
           <Marker position={[userCoords.lat, userCoords.lng]} icon={clientGreenIcon} />
         )}
 
-        {/* ✅ FIX SÉCURITÉ PUBLICATION : Distinction claire entre Mode Consultation et Mode Création */}
+        {/*  Distinction claire entre Mode Consultation et Mode Création */}
         {readOnly ? (
           // Mode Consultation/Détails : On affiche le point fixe du bien s'il n'y a pas de tracking GPS en cours
           mapPosition && !userCoords && <Marker position={mapPosition} interactive={false} />

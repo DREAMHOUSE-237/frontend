@@ -27,7 +27,6 @@ const Navbar = () => {
         
         {/* Logo & Titre - À gauche */}
         <NavLink to="/" className="flex items-center space-x-3 cursor-pointer group">
-          {/* ✅ Intégration de l'image du logo avec gestion de l'effet scrolled */}
           <div className={`overflow-hidden rounded-xl transition-all duration-300 ${scrolled ? 'w-9 h-9' : 'w-11 h-11'}`}>
             <img 
               src={logo} 
@@ -41,7 +40,7 @@ const Navbar = () => {
           </div>
         </NavLink>
 
-        {/* Liens centraux (Desktop) */}
+        {/* Liens centraux  */}
         <div className="hidden md:flex items-center space-x-6 text-sm font-medium">
           <NavLink to="/" className={linkStyles}>
             Accueil
@@ -83,7 +82,7 @@ const Navbar = () => {
       {/* Menu Mobile */}
       {isOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 px-6 py-4 space-y-4 shadow-lg absolute w-full left-0 z-50 animate-in slide-in-from-top-2">
-          {/* Liens de navigation mobiles */}
+        
           <NavLink to="/" className={({ isActive }) => `block font-medium ${isActive ? 'text-[#007b83]' : 'text-gray-700'}`} onClick={() => setIsOpen(false)}>
             Accueil
           </NavLink>
@@ -94,7 +93,6 @@ const Navbar = () => {
          
           <hr className="border-gray-100" />
           
-          {/* Action unique mobile */}
           <div className="flex flex-col space-y-3">
             <NavLink to="/connexion" onClick={() => setIsOpen(false)}>
               <button className="w-full flex items-center justify-center gap-2 py-2 text-center font-semibold text-[#007b83] border border-[#007b83] rounded-md">
