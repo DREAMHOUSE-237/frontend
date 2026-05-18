@@ -380,7 +380,7 @@ const Details = () => {
                 <h3 className="font-bold text-xl italic uppercase tracking-tighter text-gray-900">Responsable du bien</h3>
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Réponse rapide</p>
               </div>
-              <a href={`https://wa.me/+237${bien.numeroPaiement?.replace(/\s+/g, '')}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer" className="w-full bg-[#007b83] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-[#00666d] transition-all shadow-lg uppercase text-sm">
+              <a href={`https://wa.me/+${bien.numeroPaiement?.replace(/\s+/g, '')}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer" className="w-full bg-[#007b83] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-[#00666d] transition-all shadow-lg uppercase text-sm">
                 <MessageSquare size={20} /> WhatsApp : {bien.numeroPaiement}
               </a>
             </div>
