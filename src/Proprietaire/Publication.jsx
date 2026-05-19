@@ -521,10 +521,6 @@ const PublicationAnnonce = () => {
               <label className="text-sm font-semibold flex items-center gap-2"><Clock size={16} /> Superficie (m²)</label>
               <input type="number" name='superficie' value={formData.superficie} required placeholder="100" onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-semibold flex items-center gap-2"><Home size={16} /> Nombre de Pièces</label>
-              <input type="number" name='nbrePiece' value={formData.nbrePiece} required placeholder="5" onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
-            </div>
             <div className="space-y-2 md:col-span-2">
               <label className="text-sm font-semibold flex items-center gap-2"><AlignLeft size={16} /> Description</label>
               <textarea rows="4" name='description' value={formData.description} required placeholder="Détails importants..." onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83] resize-none"></textarea>
@@ -573,7 +569,6 @@ const PublicationAnnonce = () => {
                   <option value="" disabled>-- Choisir une option --</option>
                   <option value="VENTE">VENTE</option>
                   <option value="LOCATION">LOCATION</option>
-                  <option value="BAIL">BAIL</option>
                 </select>
               </div>
               <div className="space-y-2">
