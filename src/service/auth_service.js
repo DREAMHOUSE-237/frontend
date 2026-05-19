@@ -181,7 +181,6 @@ export const getPublicationById = async (id) => {
   try {
     const response = await axios.get(`${API_URL}/PUBLICATION-SERVICE/api/biens/${id}`);
     
-    // Si ton backend renvoie directement l'objet, on le retourne
     return response.data;
   } catch (error) {
     console.error("Erreur lors de la récupération du bien :", error);
