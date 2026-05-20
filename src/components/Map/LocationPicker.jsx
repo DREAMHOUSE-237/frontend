@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import React, { useState, useEffect, useRef } from "react";
 import L from 'leaflet';
 import "leaflet/dist/leaflet.css";
@@ -80,6 +80,33 @@ function ChangeView({ center }) {
   return null; 
 }
 
+// Recadre dynamiquement pour voir tous les logements du catalogue
+function FitAnnoncesBounds({ annoncesPoints }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !annoncesPoints || annoncesPoints.length === 0) return;
+
+    const validPoints = annoncesPoints.filter(bien => bien.lattitude && bien.longitude);
+    if (validPoints.length === 0) return;
+
+    if (validPoints.length === 1) {
+      const lat = parseFloat(validPoints[0].lattitude);
+      const lng = parseFloat(validPoints[0].longitude);
+      map.setView([lat, lng], 14, { animate: true });
+      return;
+    }
+
+    const bounds = L.latLngBounds(
+      validPoints.map(bien => [parseFloat(bien.lattitude), parseFloat(bien.longitude)])
+    );
+
+    map.fitBounds(bounds, { padding: [50, 50], animate: true, duration: 1 });
+  }, [annoncesPoints, map]);
+
+  return null;
+}
+
 function GpsCameraFollower({ userCoords }) {
   const map = useMap();
   useEffect(() => {
@@ -129,12 +156,12 @@ const StaticTileLayer = React.memo(() => {
   );
 }, () => true);
 
-export default function LocationPicker({ position, setPosition, mapPosition, isExpanded, readOnly = false, userCoords = null }) {
+export default function LocationPicker({ position, setPosition, mapPosition, isExpanded, readOnly = false, userCoords = null, annoncesPoints = [] }) {
   return (
     <div className="w-full h-full relative">
       <MapContainer
         center={userCoords ? [userCoords.lat, userCoords.lng] : mapPosition}
-        zoom={15}
+        zoom={12} // Un zoom de départ un peu plus large
         style={{ height: "100%", width: "100%", borderRadius: isExpanded ? "0px" : "12px" }}
         dragging={true}
         scrollWheelZoom={true}
@@ -142,8 +169,14 @@ export default function LocationPicker({ position, setPosition, mapPosition, isE
         <StaticTileLayer />
         <ResizeMap isExpanded={isExpanded} />
         
-        {/* Vue caméra initiale lors des recherches d'adresses */}
-        {!userCoords && <ChangeView center={mapPosition} />}
+        {/* Caméra intelligente adaptative */}
+        {!userCoords && (
+          annoncesPoints && annoncesPoints.length > 0 ? (
+            <FitAnnoncesBounds annoncesPoints={annoncesPoints} />
+          ) : (
+            <ChangeView center={mapPosition} />
+          )
+        )}
 
         {/* Tracé d'itinéraire actif */}
         {userCoords && mapPosition && (
@@ -158,10 +191,45 @@ export default function LocationPicker({ position, setPosition, mapPosition, isE
           <Marker position={[userCoords.lat, userCoords.lng]} icon={clientGreenIcon} />
         )}
 
-        {/*  Distinction claire entre Mode Consultation et Mode Création */}
+        {/* Distinction claire entre Mode Consultation, Mode Recherche Globale et Mode Création */}
         {readOnly ? (
-          // Mode Consultation/Détails : On affiche le point fixe du bien s'il n'y a pas de tracking GPS en cours
-          mapPosition && !userCoords && <Marker position={mapPosition} interactive={false} />
+          <>
+            {/* Mode Recherche Globale (Écran partagé avec liste d'annonces) */}
+            {annoncesPoints && annoncesPoints.length > 0 ? (
+              annoncesPoints.map((bien) => {
+                if (!bien.lattitude || !bien.longitude) return null;
+                return (
+                  <Marker 
+                    key={bien.id} 
+                    position={[parseFloat(bien.lattitude), parseFloat(bien.longitude)]}
+                  >
+                    <Popup>
+                      <div style={{ fontFamily: 'sans-serif', padding: '4px', minWidth: '140px' }}>
+                        <h4 style={{ fontWeight: 'bold', color: '#1a2b3c', margin: '0 0 4px 0', fontSize: '13px' }}>
+                          {bien.titreBien || "Logement"}
+                        </h4>
+                        <p style={{ color: '#f97316', fontWeight: '900', margin: '0 0 6px 0', fontSize: '12px' }}>
+                          {bien.prix?.toLocaleString()} XAF
+                        </p>
+                        <span style={{ backgroundColor: '#f3f4f6', color: '#4b5563', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                          {bien.categorie}
+                        </span>
+                        <a 
+                          href={`/detail/${bien.id}`} 
+                          style={{ display: 'block', textAlign: 'center', backgroundColor: '#1a2b3c', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '6px', borderRadius: '6px', marginTop: '8px', textDecoration: 'none' }}
+                        >
+                          Voir les détails
+                        </a>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })
+            ) : (
+              // Mode Consultation/Détails classique : On affiche le point fixe du bien s'il n'y a pas de tracking GPS en cours
+              mapPosition && !userCoords && <Marker position={mapPosition} interactive={false} />
+            )}
+          </>
         ) : (
           // Mode Création/Publication : On active l'écouteur de clic pour enregistrer l'emplacement
           <LocationMarker position={position} setPosition={setPosition} />

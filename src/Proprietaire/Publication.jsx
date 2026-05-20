@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronLeft, ChevronRight, MapPin, Layout,
   Sparkles, Type, AlignLeft, DollarSign, Clock, Check,
-  Plus, Home, X, Smartphone, Navigation, Loader2, Maximize2, Minimize2, CreditCard,
+  Plus, Home, X, Smartphone, Navigation,Ruler, Loader2, Maximize2, Minimize2, CreditCard,
   AlertCircle
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
@@ -506,7 +506,7 @@ const PublicationAnnonce = () => {
               <input type="number" name='prix' value={formData.prix} required placeholder="150 000" onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-semibold flex items-center gap-2"><Clock size={16} /> Superficie (m²)</label>
+              <label className="text-sm font-semibold flex items-center gap-2"><Ruler size={16} /> Superficie (m²)</label>
               <input type="number" name='superficie' value={formData.superficie} required placeholder="100" onChange={handleInputChange} className="w-full p-4 border border-gray-200 rounded-lg outline-none focus:border-[#007b83]" />
             </div>
             <div className="space-y-2">

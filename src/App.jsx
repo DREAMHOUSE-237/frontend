@@ -8,6 +8,9 @@ import Navbar3 from './components/Navbar3';
 import Footer from './components/Footer';
 import ScrollToTop from "./components/ScrollToTop";
 
+//  IMPORTATION DU COMPOSANT DE DÉCONNEXION AUTOMATIQUE
+import AutoLogout from './components/AutoLogout'; 
+
 // Import des Pages
 import Accueil from './pages/Accueil';
 import Recherche from './pages/Recherche';
@@ -43,7 +46,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
       return <Navigate to="/admin" replace />;
     }
 
-    //  Si un client tente d'accéder à une route propriétaire ou admin,on le redirige directement vers l'accueil public au lieu de lui afficher une erreur.
+    // Si un client tente d'accéder à une route propriétaire ou admin, on le redirige vers l'accueil public
     if (userRole === 'client' && allowedRoles.length > 0 && !allowedRoles.includes('client')) {
       return <Navigate to="/" replace />;
     }
@@ -73,7 +76,8 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/connexion" replace />;
   }
 
-  return children;
+  {/*  On enveloppe les enfants de la route protégée avec AutoLogout */}
+  return <AutoLogout>{children}</AutoLogout>;
 };
 
 
@@ -102,7 +106,7 @@ const LayoutWrapper = ({ children, setIsAuthenticated }) => {
       navigate('/admin', { replace: true });
     }
 
-    //  Si un client tente manuellement d'entrer sur les URLs privées
+    // Si un client tente manuellement d'entrer sur les URLs privées
     const routesPriveesMoinsClient = ['/accueil2', '/publication', '/mes-publications', '/admin'];
     if (role === 'client' && routesPriveesMoinsClient.some(route => location.pathname.startsWith(route))) {
       navigate('/', { replace: true });
@@ -117,7 +121,6 @@ const LayoutWrapper = ({ children, setIsAuthenticated }) => {
 
   const renderNavbar = () => {
     if (!token) return <Navbar />;
-    // Le client a strictement la Navbar3, les autres rôles (proprietaire, agence) ont la Navbar2
     return role === 'client' 
       ? <Navbar3 onLogout={handleLogout} /> 
       : <Navbar2 onLogout={handleLogout} />;
@@ -171,7 +174,7 @@ function App() {
             element={<ProtectedRoute><IdentityVerification /></ProtectedRoute>} 
           />
 
-          {/* ROUTES RÉSERVÉES PROPRIOS / AGENCES (Interdites au client) */}
+          {/* ROUTES RÉSERVÉES PROPRIOS / AGENCES */}
           <Route 
             path='/accueil2' 
             element={
