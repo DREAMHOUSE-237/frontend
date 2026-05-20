@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "/api";
 
 // connexion service Aut
 
@@ -95,6 +95,7 @@ export const createAnnoce = async (data, images, position, adresse, documents) =
 
         }
         const response = await axios.post(`${API_URL}/PUBLICATION-SERVICE/api/biens`, formData);
+       
 
         return response.data;
     }
@@ -198,21 +199,37 @@ export const BienService = {
     return await response.json();
   },
 
-  // Recherche dynamique par critères
+  // Recherche dynamique par critères alignée sur le contrôleur Spring Boot
   search: async (filters) => {
     let url = `${API_URL}/PUBLICATION-SERVICE/api/biens`;
     
-    // Construction de l'URL selon les filtres présents
-    if (filters.ville && filters.prixMax) {
-      url += `/search/ville-prix?ville=${filters.ville}&prix=${filters.prixMax}`;
-    } else if (filters.categorie) {
+    // 1. Ville ET Prix (Route: /search/ville-prix)
+    if (filters.ville && filters.prix) {
+      url += `/search/ville-prix?ville=${encodeURIComponent(filters.ville)}&prix=${filters.prix}`;
+    } 
+    // 2. Catégorie seule (Route: /search/categorie)
+    else if (filters.categorie) {
       url += `/search/categorie?categorie=${filters.categorie}`;
-    } else if (filters.ville) {
-      url += `/search/ville?ville=${filters.ville}`;
-    } else if (filters.prixMax) {
-      url += `/search/prix-max?prix=${filters.prixMax}`;
-    } else if (filters.quartier) {
-      url += `/search/quartier?quartier=${filters.quartier}`;
+    } 
+    // 3. Ville seule (Route: /search/ville)
+    else if (filters.ville) {
+      url += `/search/ville?ville=${encodeURIComponent(filters.ville)}`;
+    } 
+    // 4. Prix max seul (Route: /search/prix-max)
+    else if (filters.prix) {
+      url += `/search/prix-max?prix=${filters.prix}`;
+    } 
+    // 5. Quartier seul (Route: /search/quartier)
+    else if (filters.quartier) {
+      url += `/search/quartier?quartier=${encodeURIComponent(filters.quartier)}`;
+    }
+    // 6. Pièces min seul (Route: /search/nbre-piece-min)
+    else if (filters.pieces) {
+      url += `/search/nbre-piece-min?nbrePiece=${filters.pieces}`;
+    }
+    // 7. Type de publication seul (Route: /search/type-publication)
+    else if (filters.type) {
+      url += `/search/type-publication?typePublication=${filters.type}`;
     }
     
     const response = await fetch(url);
@@ -220,16 +237,12 @@ export const BienService = {
     return await response.json();
   },
 
-  // ✅ FIX CLOUDINARY : Renvoie directement l'URL absolue stockée en base de données
   formatImageUrl: (imageName) => {
     if (!imageName) return "https://via.placeholder.com/400x320?text=Aucune+image";
-    
-    // Si l'image est déjà une URL complète (Cloudinary), on la retourne telle quelle
     if (imageName.startsWith('http://') || imageName.startsWith('https://')) {
       return imageName;
     }
-    
-   
+    return imageName;
   }
 };
 //user service  

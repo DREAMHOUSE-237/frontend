@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin, DollarSign, Key, Calendar, Users,
   MessageSquare, Send, User, FileText, Navigation,
   Maximize2, Minimize2, Home, Loader2,
-  ChevronLeft, ChevronRight, X, Ruler, Heart, Trash2, Reply
+  ChevronLeft, ChevronRight, X, Heart, Trash2, Reply
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
 import { getPublicationById, BienService, CommentService } from '../service/auth_service';
@@ -19,10 +19,10 @@ const Details = () => {
   const [isMapMaximized, setIsMapMaximized] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
-  const [lightboxMode, setLightboxMode] = useState('images');
+  const [lightboxMode, setLightboxMode] = useState('images'); 
   const [activeDoc, setActiveDoc] = useState(0);
-  const [coords, setCoords] = useState(null);
-  const [replyingTo, setReplyingTo] = useState(null);
+  const [coords, setCoords] = useState(null); 
+  const [replyingTo, setReplyingTo] = useState(null); 
   const [replyText, setReplyText] = useState("");
   const navigate = useNavigate();
 
@@ -31,11 +31,6 @@ const Details = () => {
   const [isTracking, setIsTracking] = useState(false);
   const [userQuery, setUserQuery] = useState("");
   const [routeLoading, setRouteLoading] = useState(false);
-
-  //  Autocomplétion et suggestions
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const suggestionRef = useRef(null);
 
   useEffect(() => {
     const fetchBien = async () => {
@@ -61,40 +56,6 @@ const Details = () => {
     };
     fetchBien();
   }, [id]);
-
-  //  Recherche au fur et à mesure avec Debounce
-  useEffect(() => {
-    if (userQuery.trim().length < 3) {
-      setSuggestions([]);
-      return;
-    }
-
-    const delayDebounceFn = setTimeout(async () => {
-      try {
-        // Limitation volontaire au Cameroun (countrycodes=cm) pour éviter les hors-sujets
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(userQuery)}&countrycodes=cm&limit=5`
-        );
-        const data = await response.json();
-        setSuggestions(data);
-      } catch (error) {
-        console.error("Erreur récupération suggestions:", error);
-      }
-    }, 400); // Attend 400ms d'inactivité avant de lancer la requête API
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [userQuery]);
-
-  //  Fermer les suggestions si on clique en dehors du champ
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (suggestionRef.current && !suggestionRef.current.contains(event.target)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   // Hook d'écoute GPS matériel natif
   useEffect(() => {
@@ -132,49 +93,33 @@ const Details = () => {
     }
   }, [isMapMaximized]);
 
-  // Sélection d'une proposition dans la liste
-  const handleSelectSuggestion = (place) => {
-    setUserQuery(place.display_name);
-    setUserCoords({
-      lat: parseFloat(place.lat),
-      lng: parseFloat(place.lon)
-    });
-    setSuggestions([]);
-    setShowSuggestions(false);
-    setIsMapMaximized(true);
-  };
-
+  // Calcul d'itinéraire basé sur la saisie de texte du client
   const handleCalculateRoute = async (e) => {
     e.preventDefault();
     if (!userQuery.trim()) return;
 
-    // Si l'utilisateur clique sur tracer sans choisir une suggestion, on prend le premier résultat
-    if (!userCoords) {
-      setRouteLoading(true);
-      setIsTracking(false);
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(userQuery)}&countrycodes=cm&limit=1`
-        );
-        const data = await response.json();
+    setRouteLoading(true);
+    setIsTracking(false); 
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(userQuery)}`
+      );
+      const data = await response.json();
 
-        if (data.length > 0) {
-          setUserCoords({
-            lat: parseFloat(data[0].lat),
-            lng: parseFloat(data[0].lon)
-          });
-          setIsMapMaximized(true);
-        } else {
-          alert("Lieu introuvable. Soyez plus précis (ex: Simbock, Yaoundé).");
-        }
-      } catch (error) {
-        console.error("Erreur itinéraire textuel :", error);
-        alert("Impossible de calculer le trajet.");
-      } finally {
-        setRouteLoading(false);
+      if (data.length > 0) {
+        setUserCoords({
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        });
+        setIsMapMaximized(true); 
+      } else {
+        alert("Lieu introuvable. Soyez plus précis (ex: Simbock, Yaoundé).");
       }
-    } else {
-      setIsMapMaximized(true);
+    } catch (error) {
+      console.error("Erreur itinéraire textuel :", error);
+      alert("Impossible de calculer le trajet.");
+    } finally {
+      setRouteLoading(false);
     }
   };
 
@@ -202,6 +147,18 @@ const Details = () => {
       alert("Une erreur réseau est survenue.");
     } finally {
       setSending(false);
+    }
+  };
+
+  // ✨ Gestion de la redirection de contact sécurisée WhatsApp
+  const handleContactOwner = (e) => {
+    const userId = localStorage.getItem('userid');
+    const token = localStorage.getItem('token');
+
+    if (!userId || !token) {
+      e.preventDefault(); // Empêche l'ouverture immédiate du lien <a>
+      alert("Vous devez être connecté pour contacter le responsable de cette annonce.");
+      navigate('/connexion');
     }
   };
 
@@ -281,38 +238,32 @@ const Details = () => {
       <div className="max-w-screen-2xl mx-auto p-4 md:p-10 font-sans text-gray-800">
 
         {/* Lightbox */}
-        {/* Lightbox */}
         {showLightbox && (
-          <div className="fixed inset-0 top-0 left-0 w-full h-full z-[999999] bg-black/95 flex items-center justify-center p-4 select-none">
-            {/* Bouton Fermer (X) sur-élevé et isolé électriquement au-dessus de tout */}
-            <button
-              onClick={() => setShowLightbox(false)}
-              className="absolute top-6 right-6 z-[1000000] text-white/70 hover:text-white bg-black/40 hover:bg-black/80 p-3 rounded-full transition-all cursor-pointer border border-white/10"
-              aria-label="Fermer la lightbox"
-            >
-              <X size={32} />
-            </button>
+          <div className="fixed inset-0 z-[100000] bg-black/95 flex items-center justify-center p-4">
+            <button onClick={() => setShowLightbox(false)} className="absolute top-6 right-6 text-white/70 hover:text-white"><X size={40} /></button>
+            <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronLeft size={32} /></button>
+            <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 text-white rounded-full"><ChevronRight size={32} /></button>
+            <img src={BienService.formatImageUrl(lightboxMode === 'images' ? images[activeImg] : docs[activeDoc])} className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg" alt="Média" />
+          </div>
+        )}
 
-            {/* Flèches de navigation */}
+        {/* Mode Maximisé de la carte */}
+        {isMapMaximized && coords && (
+          <div className="fixed inset-0 z-[200000] bg-white w-screen h-screen">
             <button
-              onClick={prevImage}
-              className="absolute left-6 top-1/2 -translate-y-1/2 z-[1000000] p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-all cursor-pointer"
+              onClick={() => { setIsMapMaximized(false); setIsTracking(false); setUserCoords(null); }}
+              className="absolute top-6 right-6 z-[200005] bg-gray-900 text-white p-3 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center justify-center"
             >
-              <ChevronLeft size={32} />
+              <Minimize2 size={24} />
             </button>
-            <button
-              onClick={nextImage}
-              className="absolute right-6 top-1/2 -translate-y-1/2 z-[1000000] p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-all cursor-pointer"
-            >
-              <ChevronRight size={32} />
-            </button>
-
-            {/* Conteneur de l'image */}
-            <img
-              src={BienService.formatImageUrl(lightboxMode === 'images' ? images[activeImg] : docs[activeDoc])}
-              className="max-h-[85vh] max-w-[90vw] object-contain rounded-xl shadow-2xl pointer-events-none select-none"
-              alt="Média agrandi"
-            />
+            <div className="w-full h-full">
+              <LocationPicker 
+                mapPosition={[coords.lat, coords.lng]} 
+                readOnly={true} 
+                userCoords={userCoords} 
+                isExpanded={isMapMaximized}
+              />
+            </div>
           </div>
         )}
 
@@ -351,12 +302,11 @@ const Details = () => {
 
             {/* Caractéristiques */}
             <div className="grid grid-cols-1 gap-2 bg-white/60 p-6 rounded-xl border border-white/40 shadow-sm">
-              <InfoLine icon={<DollarSign size={18} />} label="Prix" value={`${bien.prix?.toLocaleString()} FCFA/mois`} />
+              <InfoLine icon={<DollarSign size={18} />} label="Prix" value={`${bien.prix?.toLocaleString()} FCFA`} />
               <InfoLine icon={<Key size={18} />} label="Type" value={bien.typePublication} />
               <InfoLine icon={<Home size={18} />} label="Type Bien Immobilier" value={bien.typeBienImmobilier} />
               <InfoLine icon={<Calendar size={18} />} label="Catégorie" value={bien.categorie} />
               <InfoLine icon={<Users size={18} />} label="Pièces" value={bien.nbrePiece} />
-              <InfoLine icon={<Ruler size={18} />} label="Superficie(m²)" value={bien.superficie} />
             </div>
 
             {/* Description */}
@@ -401,72 +351,43 @@ const Details = () => {
                 </div>
               </div>
 
-              {/*  FORMULAIRE D'ITINÉRAIRE AVEC AUTOCOMPLÉTION & SUGGESTIONS */}
-              <div className="relative z-30" ref={suggestionRef}>
-                <form onSubmit={handleCalculateRoute} className="flex gap-2 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
-                  <div className="relative flex-1 flex items-center">
-                    <Navigation className="absolute left-3 text-[#007b83]" size={16} />
-                    <input
-                      type="text"
-                      placeholder="Votre départ (ex: Douala, Yaoundé)..."
-                      value={userQuery}
-                      onFocus={() => setShowSuggestions(true)}
-                      onChange={(e) => {
-                        setUserQuery(e.target.value);
-                        setUserCoords(null); // Réinitialise les coordonnées tant qu'on n'a pas validé une suggestion
-                        setShowSuggestions(true);
-                      }}
-                      className="w-full pl-9 pr-2 py-2.5 bg-transparent outline-none text-xs font-medium"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={routeLoading || !userQuery.trim()}
-                    className="bg-[#1a2b3c] text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-[#007b83] transition-colors disabled:bg-gray-200"
-                  >
-                    {routeLoading ? "..." : "Tracer"}
-                  </button>
-                </form>
-
-                {/* Boîte de suggestions déroulantes */}
-                {showSuggestions && suggestions.length > 0 && (
-                  <ul className="absolute left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto z-[250000] text-xs divide-y divide-gray-50">
-                    {suggestions.map((place) => (
-                      <li
-                        key={place.place_id}
-                        onClick={() => handleSelectSuggestion(place)}
-                        className="p-3 hover:bg-gray-50 cursor-pointer flex items-start gap-2 transition-colors text-gray-700"
-                      >
-                        <MapPin size={14} className="text-gray-400 shrink-0 mt-0.5" />
-                        <span>{place.display_name}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              {/* Formulaire Itinéraire */}
+              <form onSubmit={handleCalculateRoute} className="flex gap-2 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm relative z-20">
+                <div className="relative flex-1 flex items-center">
+                  <Navigation className="absolute left-3 text-[#007b83]" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Votre départ (ex: Bastos, Yaoundé)..."
+                    value={userQuery}
+                    onChange={(e) => setUserQuery(e.target.value)}
+                    className="w-full pl-9 pr-2 py-2.5 bg-transparent outline-none text-xs font-medium"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={routeLoading || !userQuery.trim()}
+                  className="bg-[#1a2b3c] text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-[#007b83] transition-colors disabled:bg-gray-200"
+                >
+                  {routeLoading ? "..." : "Tracer"}
+                </button>
+              </form>
             </div>
 
-            {/* ✨ MODIFIÉ : SECTION CONTACT DYNAMIQUE (NOM & RÔLE) */}
+            {/* ✨ Section Contact Responsable Sécurisée */}
             <div className="border border-white bg-white/80 rounded-3xl p-8 text-center space-y-6 shadow-md">
-              <div className="w-20 h-20 bg-gray-100 rounded-full mx-auto flex items-center justify-center border border-white shadow-inner">
-                <User size={40} className="text-[#007b83]" />
-              </div>
+              <div className="w-20 h-20 bg-gray-100 rounded-full mx-auto flex items-center justify-center border border-white shadow-inner"><User size={40} className="text-[#007b83]" /></div>
               <div>
-                {/* Affiche le nom s'il existe dans le modèle de l'utilisateur, sinon un nom par défaut */}
-                <h3 className="font-bold text-xl italic uppercase tracking-tighter text-gray-900">
-                  {bien.proprietaire?.nom || bien.nomContact || "Bailleur "}
-                </h3>
-                <p className="text-xs text-[#007b83] font-bold uppercase tracking-widest">
-                  {bien.proprietaire?.role || bien.roleContact || "Propriétaire / Agent"}
-                </p>
+                <h3 className="font-bold text-xl italic uppercase tracking-tighter text-gray-900">Responsable du bien</h3>
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Réponse rapide</p>
               </div>
-              <a
-                href={`https://wa.me/+${bien.numeroPaiement?.replace(/\s+/g, '')}?text=${encodeURIComponent(whatsappMessage)}`}
-                target="_blank"
-                rel="noreferrer"
+              <a 
+                href={`https://wa.me/+${bien.numeroPaiement?.replace(/\s+/g, '')}?text=${encodeURIComponent(whatsappMessage)}`} 
+                target="_blank" 
+                rel="noreferrer" 
+                onClick={handleContactOwner}
                 className="w-full bg-[#007b83] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-[#00666d] transition-all shadow-lg uppercase text-sm"
               >
-                <MessageSquare size={20} /> WhatsApp : {bien.numeroPaiement}
+                <MessageSquare size={20} /> Contacter sur WhatsApp
               </a>
             </div>
 

@@ -393,7 +393,7 @@ const PublicationAnnonce = () => {
                     <Loader2 className="animate-spin text-amber-600" size={16} /> Demande initiée avec succès
                   </div>
                   <p className="text-xs text-amber-900 leading-relaxed">
-                    Un message de confirmation va apparaître sur votre téléphone connecté au numéro <strong className="font-bold font-mono">6{paymentNumber}</strong>.<br /><br />
+                    Un message de confirmation va apparaître sur votre téléphone connecté au numéro <strong className="font-bold font-mono">{paymentNumber}</strong>.<br /><br />
                     1. Saisissez votre **code PIN** pour valider la transaction.<br />
                     2. Si aucun message ne s'affiche,vérifiez vos approbations via Momo(MTN)/ Orange Money(OM).
                   </p>
