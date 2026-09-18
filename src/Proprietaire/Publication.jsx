@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import LocationPicker from '../components/Map/LocationPicker';
 import SearchLocation from '../components/Map/SearchLocation';
-import { createAnnoce, getPublicationById } from '../service/auth_service';
+import { createAnnoce, getPublicationById, retryPayment } from '../service/auth_service';
 
 const PublicationAnnonce = () => {
   const [step, setStep] = useState(1);
@@ -270,6 +270,18 @@ const PublicationAnnonce = () => {
       setPaymentStatus('processing');
       setApiError('');
 
+      const numeroPaiementComplet = `237${paymentNumber}`;
+
+      // Une annonce a déjà été créée lors d'une tentative précédente : on
+      // relance juste la demande de paiement (pas de ré-upload des photos,
+      // pas de nouvelle annonce en double).
+      if (createdBienId) {
+        await retryPayment(createdBienId, numeroPaiementComplet);
+        setPaymentStatus('pending_ussd');
+        startPollingStatus(createdBienId);
+        return;
+      }
+
       const adresse = {
         region: formData.region,
         ville: formData.ville,
@@ -278,7 +290,7 @@ const PublicationAnnonce = () => {
 
       const finalFormData = {
         ...formData,
-        numeroPaiement: `237${paymentNumber}`
+        numeroPaiement: numeroPaiementComplet
       };
 
       const rawImages = images.map(img => img.raw);

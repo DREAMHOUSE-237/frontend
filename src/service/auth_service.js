@@ -106,6 +106,22 @@ export const createAnnoce = async (data, images, position, adresse, documents) =
 
 };
 
+// Relance la demande de paiement pour une annonce déjà créée, sans
+// ré-uploader les photos (contrairement à createAnnoce).
+export const retryPayment = async (bienId, numeroPaiement) => {
+    try {
+        const response = await axios.post(
+            `${API_URL}/PUBLICATION-SERVICE/api/biens/${bienId}/retry-payment`,
+            { numeroPaiement }
+        );
+        return response.data;
+    }
+    catch (error) {
+        console.error("Erreur retry paiement:", error);
+        throw error.response || new Error("Erreur lors de la relance du paiement");
+    }
+};
+
 export const Mes_Publications = async () => {
     try {
         const token = localStorage.getItem('token');
