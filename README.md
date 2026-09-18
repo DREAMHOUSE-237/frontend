@@ -1,16 +1,46 @@
-# React + Vite
+# DREAMHOUSE237 — Frontend Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Application web (React + Vite) de la plateforme immobilière **DREAMHOUSE237** (Cameroun).
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React 19 / React Router 7
+- Vite 7
+- Tailwind CSS 4
+- Axios (appels API vers le gateway backend)
+- Leaflet / React-Leaflet (carte des biens)
+- Lucide (icônes), qrcode.react
 
-## React Compiler
+## Structure
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```
+src/
+├── pages/          # Pages principales (catalogue, détail, auth, etc.)
+├── Proprietaire/    # Espace propriétaire (publication de biens, paiement des frais)
+├── admin/           # Espace administrateur
+├── components/      # Composants réutilisables (dont Map/ pour la carte Leaflet)
+├── service/         # Client Axios / appels API vers le gateway
+└── App.jsx
+```
 
-## Expanding the ESLint configuration
+## Backend
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+L'application consomme l'API via le **gateway** (`proxy-service`) de la plateforme, qui route vers chacun des microservices (`AUTHENTIFICATION`, `USER-SERVICE`, `PUBLICATION-SERVICE`, `COMMENTARY-SERVICE`, `PAYMENT-SERVICE`, `IDENTITY-SERVICE`). L'URL du gateway est configurée dans `src/service/`.
+
+## Développement local
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+npm run preview
+```
+
+## Déploiement
+
+Déployé sur **Render** (`dreamhouse237.onrender.com`), indépendamment du pipeline Docker Swarm utilisé pour le backend (voir [`infrastructure`](https://github.com/DREAMHOUSE-237/infrastructure)).
